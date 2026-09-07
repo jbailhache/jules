@@ -4,32 +4,38 @@
 <meta charset="UTF-8">
 <title>test saisie</title>
 <script type="text/javascript">
-var lastFocusedTextareaId = 'texte';
+var lastFocusedField = null;
 
-function updateLastFocused(element) {
-    if (element && element.id) {
-        lastFocusedTextareaId = element.id;
+document.addEventListener('focusin', function(event) {
+    var tag = event.target.tagName.toLowerCase();
+    if (tag === 'textarea' || (tag === 'input' && (event.target.type === 'text' || event.target.type === 'search' || !event.target.type))) {
+        lastFocusedField = event.target;
     }
-}
+});
 
 function insertAtCursor(char) {
-    var targetId = lastFocusedTextareaId || 'texte';
-    var textarea = document.getElementById(targetId);
-    if (textarea) {
-        textarea.focus();
-        if (typeof textarea.selectionStart === 'number' && typeof textarea.selectionEnd === 'number') {
-            var startPos = textarea.selectionStart;
-            var endPos = textarea.selectionEnd;
-            var val = textarea.value;
-            textarea.value = val.substring(0, startPos) + char + val.substring(endPos);
-            textarea.selectionStart = textarea.selectionEnd = startPos + char.length;
+    var field = lastFocusedField || document.activeElement;
+    if (field && (field.tagName.toLowerCase() === 'textarea' || field.tagName.toLowerCase() === 'input')) {
+        field.focus();
+        if (typeof field.selectionStart === 'number' && typeof field.selectionEnd === 'number') {
+            var startPos = field.selectionStart;
+            var endPos = field.selectionEnd;
+            var val = field.value;
+            field.value = val.substring(0, startPos) + char + val.substring(endPos);
+            field.selectionStart = field.selectionEnd = startPos + char.length;
         } else {
-            textarea.value += char;
+            field.value += char;
         }
     }
 }
 
 function openCharTable() {
+    if (document.activeElement && (document.activeElement.tagName.toLowerCase() === 'textarea' || document.activeElement.tagName.toLowerCase() === 'input')) {
+        var tag = document.activeElement.tagName.toLowerCase();
+        if (tag === 'textarea' || document.activeElement.type === 'text' || document.activeElement.type === 'search' || !document.activeElement.type) {
+            lastFocusedField = document.activeElement;
+        }
+    }
     var popup = window.open('', 'CharTablePopup', 'width=300,height=200,resizable=yes,scrollbars=yes');
     if (popup) {
         var doc = popup.document;
@@ -64,9 +70,9 @@ Test saisie
 ?>
 <p>
 <form method="POST" action="testsaisie.php">
-<textarea name="texte" id="texte" rows="20" cols="100" onfocus="updateLastFocused(this)"><?php echo isset($_POST['texte']) ? htmlspecialchars($_POST['texte'], ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
+<textarea name="texte" id="texte" rows="20" cols="100"><?php echo isset($_POST['texte']) ? htmlspecialchars($_POST['texte'], ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
 <p>
-<textarea name="texte2" id="texte2" rows="20" cols="100" onfocus="updateLastFocused(this)"><?php echo isset($_POST['texte2']) ? htmlspecialchars($_POST['texte2'], ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
+<textarea name="texte2" id="texte2" rows="20" cols="100"><?php echo isset($_POST['texte']) ? htmlspecialchars($_POST['texte'], ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
 <p>
 <input type="submit" value="OK">
 <input type="button" value="Table de caractères" onclick="openCharTable()">
