@@ -4,23 +4,55 @@
 <meta charset="UTF-8">
 <title>test saisie</title>
 <script type="text/javascript">
-function insertAtCursor(char) {
-    var textarea = document.getElementById('texte');
-    if (textarea) {
-        textarea.focus();
-        if (typeof textarea.selectionStart === 'number' && typeof textarea.selectionEnd === 'number') {
-            var startPos = textarea.selectionStart;
-            var endPos = textarea.selectionEnd;
-            var val = textarea.value;
-            textarea.value = val.substring(0, startPos) + char + val.substring(endPos);
-            textarea.selectionStart = textarea.selectionEnd = startPos + char.length;
-        } else {
-            textarea.value += char;
+var lastFocusedField = null;
+
+document.addEventListener('focusin', function(event) {
+    var tag = event.target.tagName ? event.target.tagName.toLowerCase() : '';
+    if (tag === 'textarea' || (tag === 'input' && (event.target.type === 'text' || event.target.type === 'search' || !event.target.type))) {
+        lastFocusedField = event.target;
+    }
+});
+
+function getActiveField() {
+    var jssEditorInput = document.querySelector('.jexcel td.editor input, .jexcel td.editor textarea, .jss td.editor input, .jss td.editor textarea');
+    if (jssEditorInput) {
+        return jssEditorInput;
+    }
+    if (document.activeElement) {
+        var activeTag = document.activeElement.tagName ? document.activeElement.tagName.toLowerCase() : '';
+        if (activeTag === 'textarea' || (activeTag === 'input' && (document.activeElement.type === 'text' || document.activeElement.type === 'search' || !document.activeElement.type))) {
+            return document.activeElement;
         }
+    }
+    if (lastFocusedField && document.contains(lastFocusedField)) {
+        return lastFocusedField;
+    }
+    return document.getElementById('texte');
+}
+
+function insertAtCursor(char) {
+    var field = getActiveField();
+    if (field && (field.tagName.toLowerCase() === 'textarea' || field.tagName.toLowerCase() === 'input')) {
+        field.focus();
+        if (typeof field.selectionStart === 'number' && typeof field.selectionEnd === 'number') {
+            var startPos = field.selectionStart;
+            var endPos = field.selectionEnd;
+            var val = field.value;
+            field.value = val.substring(0, startPos) + char + val.substring(endPos);
+            field.selectionStart = field.selectionEnd = startPos + char.length;
+        } else {
+            field.value += char;
+        }
+        var event = new Event('input', { bubbles: true });
+        field.dispatchEvent(event);
     }
 }
 
 function openCharTable() {
+    var field = getActiveField();
+    if (field) {
+        lastFocusedField = field;
+    }
     var popup = window.open('', 'CharTablePopup', 'width=300,height=200,resizable=yes,scrollbars=yes');
     if (popup) {
         var doc = popup.document;
