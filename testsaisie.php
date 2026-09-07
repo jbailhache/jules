@@ -29,6 +29,15 @@ document.addEventListener('focusin', function(event) {
     }
 });
 
+document.addEventListener('selectionchange', function() {
+    var activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+    if (activeTag === 'textarea' || activeTag === 'input') {
+        if (document.activeElement.closest && document.activeElement.closest('.jexcel td.editor, .jss td.editor')) {
+            captureJssState();
+        }
+    }
+});
+
 function captureJssState() {
     var editorInput = document.querySelector('.jexcel td.editor input, .jexcel td.editor textarea, .jss td.editor input, .jss td.editor textarea, .jexcel_editor input, .jexcel_editor textarea');
     if (editorInput) {
@@ -56,8 +65,9 @@ function captureJssState() {
             val = instance.edition[1];
         }
 
-        var startPos = typeof editorInput.selectionStart === 'number' ? editorInput.selectionStart : val.length;
-        var endPos = typeof editorInput.selectionEnd === 'number' ? editorInput.selectionEnd : val.length;
+        var isFocused = (document.activeElement === editorInput);
+        var startPos = isFocused && typeof editorInput.selectionStart === 'number' ? editorInput.selectionStart : (val ? val.length : 0);
+        var endPos = isFocused && typeof editorInput.selectionEnd === 'number' ? editorInput.selectionEnd : (val ? val.length : 0);
 
         if (activeJssState && activeJssState.td === td) {
             activeJssState.instance = instance || activeJssState.instance;
@@ -65,7 +75,7 @@ function captureJssState() {
             if (val) {
                 activeJssState.value = val;
             }
-            if (document.activeElement === editorInput && typeof editorInput.selectionStart === 'number') {
+            if (isFocused && typeof editorInput.selectionStart === 'number') {
                 activeJssState.selectionStart = editorInput.selectionStart;
                 activeJssState.selectionEnd = editorInput.selectionEnd;
             }
@@ -95,8 +105,9 @@ function captureJssState() {
         }
         var inputEl = td ? (td.querySelector ? td.querySelector('input, textarea') : null) : null;
         var val = inputEl && inputEl.value ? inputEl.value : (instance.edition[1] || (typeof instance.getValue === 'function' ? instance.getValue(td) : ''));
-        var startPos = inputEl && typeof inputEl.selectionStart === 'number' ? inputEl.selectionStart : val.length;
-        var endPos = inputEl && typeof inputEl.selectionEnd === 'number' ? inputEl.selectionEnd : val.length;
+        var isFocused = inputEl && (document.activeElement === inputEl);
+        var startPos = isFocused && typeof inputEl.selectionStart === 'number' ? inputEl.selectionStart : (val ? val.length : 0);
+        var endPos = isFocused && typeof inputEl.selectionEnd === 'number' ? inputEl.selectionEnd : (val ? val.length : 0);
         activeJssState = {
             instance: instance,
             editorInput: inputEl,
