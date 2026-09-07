@@ -23,6 +23,8 @@ document.addEventListener('focusin', function(event) {
         lastFocusedField = event.target;
         if (event.target.closest && (event.target.closest('.jexcel td.editor, .jss td.editor') || event.target.closest('.jexcel, .jss'))) {
             captureJssState();
+        } else {
+            activeJssState = null;
         }
     }
 });
@@ -46,6 +48,19 @@ function captureJssState() {
             instance = jssObj.current;
         }
 
+        if (activeJssState && activeJssState.td === td) {
+            activeJssState.instance = instance || activeJssState.instance;
+            activeJssState.editorInput = editorInput;
+            if (editorInput.value) {
+                activeJssState.value = editorInput.value;
+                if (typeof editorInput.selectionStart === 'number') {
+                    activeJssState.selectionStart = editorInput.selectionStart;
+                    activeJssState.selectionEnd = editorInput.selectionEnd;
+                }
+            }
+            return;
+        }
+
         activeJssState = {
             instance: instance,
             editorInput: editorInput,
@@ -64,6 +79,9 @@ function captureJssState() {
     }
     if (instance && instance.edition) {
         var td = instance.edition[0];
+        if (activeJssState && activeJssState.td === td) {
+            return;
+        }
         var inputEl = td ? (td.querySelector ? td.querySelector('input, textarea') : null) : null;
         var val = inputEl ? inputEl.value : (instance.edition[1] || '');
         activeJssState = {
