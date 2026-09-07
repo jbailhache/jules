@@ -4,8 +4,17 @@
 <meta charset="UTF-8">
 <title>test saisie</title>
 <script type="text/javascript">
+var lastFocusedTextareaId = 'texte';
+
+function updateLastFocused(element) {
+    if (element && element.id) {
+        lastFocusedTextareaId = element.id;
+    }
+}
+
 function insertAtCursor(char) {
-    var textarea = document.getElementById('texte');
+    var targetId = lastFocusedTextareaId || 'texte';
+    var textarea = document.getElementById(targetId);
     if (textarea) {
         textarea.focus();
         if (typeof textarea.selectionStart === 'number' && typeof textarea.selectionEnd === 'number') {
@@ -55,7 +64,9 @@ Test saisie
 ?>
 <p>
 <form method="POST" action="testsaisie.php">
-<textarea name="texte" id="texte" rows="20" cols="100"><?php echo isset($_POST['texte']) ? htmlspecialchars($_POST['texte'], ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
+<textarea name="texte" id="texte" rows="20" cols="100" onfocus="updateLastFocused(this)"><?php echo isset($_POST['texte']) ? htmlspecialchars($_POST['texte'], ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
+<p>
+<textarea name="texte2" id="texte2" rows="20" cols="100" onfocus="updateLastFocused(this)"><?php echo isset($_POST['texte2']) ? htmlspecialchars($_POST['texte2'], ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
 <p>
 <input type="submit" value="OK">
 <input type="button" value="Table de caractères" onclick="openCharTable()">
