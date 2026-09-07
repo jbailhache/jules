@@ -7,14 +7,31 @@
 var lastFocusedField = null;
 
 document.addEventListener('focusin', function(event) {
-    var tag = event.target.tagName.toLowerCase();
+    var tag = event.target.tagName ? event.target.tagName.toLowerCase() : '';
     if (tag === 'textarea' || (tag === 'input' && (event.target.type === 'text' || event.target.type === 'search' || !event.target.type))) {
         lastFocusedField = event.target;
     }
 });
 
+function getActiveField() {
+    var jssEditorInput = document.querySelector('.jexcel td.editor input, .jexcel td.editor textarea, .jss td.editor input, .jss td.editor textarea');
+    if (jssEditorInput) {
+        return jssEditorInput;
+    }
+    if (document.activeElement) {
+        var activeTag = document.activeElement.tagName ? document.activeElement.tagName.toLowerCase() : '';
+        if (activeTag === 'textarea' || (activeTag === 'input' && (document.activeElement.type === 'text' || document.activeElement.type === 'search' || !document.activeElement.type))) {
+            return document.activeElement;
+        }
+    }
+    if (lastFocusedField && document.contains(lastFocusedField)) {
+        return lastFocusedField;
+    }
+    return document.getElementById('texte');
+}
+
 function insertAtCursor(char) {
-    var field = lastFocusedField || document.activeElement;
+    var field = getActiveField();
     if (field && (field.tagName.toLowerCase() === 'textarea' || field.tagName.toLowerCase() === 'input')) {
         field.focus();
         if (typeof field.selectionStart === 'number' && typeof field.selectionEnd === 'number') {
@@ -26,15 +43,15 @@ function insertAtCursor(char) {
         } else {
             field.value += char;
         }
+        var event = new Event('input', { bubbles: true });
+        field.dispatchEvent(event);
     }
 }
 
 function openCharTable() {
-    if (document.activeElement && (document.activeElement.tagName.toLowerCase() === 'textarea' || document.activeElement.tagName.toLowerCase() === 'input')) {
-        var tag = document.activeElement.tagName.toLowerCase();
-        if (tag === 'textarea' || document.activeElement.type === 'text' || document.activeElement.type === 'search' || !document.activeElement.type) {
-            lastFocusedField = document.activeElement;
-        }
+    var field = getActiveField();
+    if (field) {
+        lastFocusedField = field;
     }
     var popup = window.open('', 'CharTablePopup', 'width=300,height=200,resizable=yes,scrollbars=yes');
     if (popup) {
