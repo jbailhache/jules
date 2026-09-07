@@ -56,13 +56,16 @@ function captureJssState() {
             val = instance.edition[1];
         }
 
+        var startPos = typeof editorInput.selectionStart === 'number' ? editorInput.selectionStart : val.length;
+        var endPos = typeof editorInput.selectionEnd === 'number' ? editorInput.selectionEnd : val.length;
+
         if (activeJssState && activeJssState.td === td) {
             activeJssState.instance = instance || activeJssState.instance;
             activeJssState.editorInput = editorInput;
             if (val) {
                 activeJssState.value = val;
             }
-            if (typeof editorInput.selectionStart === 'number') {
+            if (document.activeElement === editorInput && typeof editorInput.selectionStart === 'number') {
                 activeJssState.selectionStart = editorInput.selectionStart;
                 activeJssState.selectionEnd = editorInput.selectionEnd;
             }
@@ -74,8 +77,8 @@ function captureJssState() {
             editorInput: editorInput,
             td: td,
             value: val,
-            selectionStart: typeof editorInput.selectionStart === 'number' ? editorInput.selectionStart : val.length,
-            selectionEnd: typeof editorInput.selectionEnd === 'number' ? editorInput.selectionEnd : val.length
+            selectionStart: startPos,
+            selectionEnd: endPos
         };
         return;
     }
@@ -92,13 +95,15 @@ function captureJssState() {
         }
         var inputEl = td ? (td.querySelector ? td.querySelector('input, textarea') : null) : null;
         var val = inputEl && inputEl.value ? inputEl.value : (instance.edition[1] || (typeof instance.getValue === 'function' ? instance.getValue(td) : ''));
+        var startPos = inputEl && typeof inputEl.selectionStart === 'number' ? inputEl.selectionStart : val.length;
+        var endPos = inputEl && typeof inputEl.selectionEnd === 'number' ? inputEl.selectionEnd : val.length;
         activeJssState = {
             instance: instance,
             editorInput: inputEl,
             td: td,
             value: val,
-            selectionStart: inputEl && typeof inputEl.selectionStart === 'number' ? inputEl.selectionStart : val.length,
-            selectionEnd: inputEl && typeof inputEl.selectionEnd === 'number' ? inputEl.selectionEnd : val.length
+            selectionStart: startPos,
+            selectionEnd: endPos
         };
         return;
     }
