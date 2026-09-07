@@ -3,6 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <title>test saisie</title>
+
+  <!-- Inclure le CSS de jSuites (optionnel pour certains composants comme le calendrier) -->
+  <link rel="stylesheet" href="node_modules/jsuites/dist/jsuites.css">
+  <!-- Inclure le CSS de Jspreadsheet -->
+  <link rel="stylesheet" href="node_modules/jspreadsheet-ce/dist/jspreadsheet.css">
+
+  <!-- Inclure jSuites AVANT Jspreadsheet -->
+  <script src="node_modules/jsuites/dist/jsuites.js"></script>
+  <!-- Inclure Jspreadsheet -->
+  <script src="node_modules/jspreadsheet-ce/dist/index.js"></script>
+
 <script type="text/javascript">
 var lastFocusedField = null;
 
@@ -90,6 +101,40 @@ Test saisie
 <textarea name="texte" id="texte" rows="20" cols="100"><?php echo isset($_POST['texte']) ? htmlspecialchars($_POST['texte'], ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
 <p>
 <textarea name="texte2" id="texte2" rows="20" cols="100"><?php echo isset($_POST['texte']) ? htmlspecialchars($_POST['texte'], ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
+<p>
+
+<?php
+// Exemple de données côté serveur (tableau PHP)
+$data = [
+    ["Nom" => "Dupont", "Âge" => 30, "Ville" => "Paris"],
+    ["Nom" => "Martin", "Âge" => 25, "Ville" => "Lyon"],
+    ["Nom" => "Durand", "Âge" => 40, "Ville" => "Marseille"],
+];
+
+// Encodage JSON pour JavaScript
+$jsonData = json_encode(array_values($data));
+?>
+
+
+
+<div id="spreadsheet"></div>
+
+<script>
+// Récupération des données PHP dans JS
+const data = <?php echo $jsonData; ?>;
+
+// Initialisation de Jspreadsheet
+jspreadsheet(document.getElementById('spreadsheet'), {
+    data: data,
+    columns: [
+        { type: 'text', title: 'Nom', width: 120 },
+        { type: 'numeric', title: 'Âge', width: 80 },
+        { type: 'text', title: 'Ville', width: 150 },
+    ],
+    minDimensions: [3, 5], // colonnes, lignes
+});
+</script>
+
 <p>
 <input type="submit" value="OK">
 <input type="button" value="Table de caractères" onclick="openCharTable()">
