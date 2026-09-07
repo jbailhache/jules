@@ -48,15 +48,23 @@ function captureJssState() {
             instance = jssObj.current;
         }
 
+        var val = editorInput.value;
+        if (!val && instance && td && typeof instance.getValue === 'function') {
+            val = instance.getValue(td) || '';
+        }
+        if (!val && instance && instance.edition && instance.edition[1]) {
+            val = instance.edition[1];
+        }
+
         if (activeJssState && activeJssState.td === td) {
             activeJssState.instance = instance || activeJssState.instance;
             activeJssState.editorInput = editorInput;
-            if (editorInput.value) {
-                activeJssState.value = editorInput.value;
-                if (typeof editorInput.selectionStart === 'number') {
-                    activeJssState.selectionStart = editorInput.selectionStart;
-                    activeJssState.selectionEnd = editorInput.selectionEnd;
-                }
+            if (val) {
+                activeJssState.value = val;
+            }
+            if (typeof editorInput.selectionStart === 'number') {
+                activeJssState.selectionStart = editorInput.selectionStart;
+                activeJssState.selectionEnd = editorInput.selectionEnd;
             }
             return;
         }
@@ -65,9 +73,9 @@ function captureJssState() {
             instance: instance,
             editorInput: editorInput,
             td: td,
-            value: editorInput.value,
-            selectionStart: typeof editorInput.selectionStart === 'number' ? editorInput.selectionStart : editorInput.value.length,
-            selectionEnd: typeof editorInput.selectionEnd === 'number' ? editorInput.selectionEnd : editorInput.value.length
+            value: val,
+            selectionStart: typeof editorInput.selectionStart === 'number' ? editorInput.selectionStart : val.length,
+            selectionEnd: typeof editorInput.selectionEnd === 'number' ? editorInput.selectionEnd : val.length
         };
         return;
     }
@@ -79,11 +87,11 @@ function captureJssState() {
     }
     if (instance && instance.edition) {
         var td = instance.edition[0];
-        if (activeJssState && activeJssState.td === td) {
+        if (activeJssState && activeJssState.td === td && activeJssState.value) {
             return;
         }
         var inputEl = td ? (td.querySelector ? td.querySelector('input, textarea') : null) : null;
-        var val = inputEl ? inputEl.value : (instance.edition[1] || '');
+        var val = inputEl && inputEl.value ? inputEl.value : (instance.edition[1] || (typeof instance.getValue === 'function' ? instance.getValue(td) : ''));
         activeJssState = {
             instance: instance,
             editorInput: inputEl,
@@ -97,6 +105,7 @@ function captureJssState() {
 }
 
 function getActiveField() {
+    captureJssState();
     var jssEditorInput = document.querySelector('.jexcel td.editor input, .jexcel td.editor textarea, .jss td.editor input, .jss td.editor textarea');
     if (jssEditorInput) {
         return jssEditorInput;
@@ -117,6 +126,7 @@ function getActiveField() {
 }
 
 function insertAtCursor(char) {
+    captureJssState();
     if (activeJssState) {
         var state = activeJssState;
         var val = state.value;
