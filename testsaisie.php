@@ -57,6 +57,8 @@ Test saisie
 <form method="POST" action="testsaisie.php">
 <textarea name="texte" id="texte" rows="20" cols="100"><?php echo isset($_POST['texte']) ? htmlspecialchars($_POST['texte'], ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
 <p>
+<textarea name="texte2" id="texte2" rows="20" cols="100"><?php echo isset($_POST['texte']) ? htmlspecialchars($_POST['texte'], ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
+<p>
 <input type="submit" value="OK">
 <input type="button" value="Table de caractères" onclick="openCharTable()">
 </form>
