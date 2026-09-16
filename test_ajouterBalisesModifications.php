@@ -177,6 +177,37 @@ $allPassed &= runTest(
     "<table><tr><td>Prix: <font color=blue><u>12,50€</u></font></td></tr></table>"
 );
 
+// Test Case 17: Complex table with row deletion and insertion
+$tableAvant = '<table><tr><th>Première colonne</th><th width="200">Deuxième colonne</th><th>Troisième colonne</th></tr>
+<tr><td>Lorem ipsum dolor sit amet</td><td>consectetur adipiscing elit</td><td>Sed non risus</td></tr>
+<tr><td>Suspendisse lectus tortor</td><td>dignissim sit amet</td><td>adipiscing nec</td></tr>
+<tr><td>ultricies sed, dolor</td><td>Cras elementum</td><td>ultrices diam</td></tr>
+<tr><td>Proin porttitor</td><td>orci nec nonummy molestie</td><td>enim est eleifend</td></tr>
+</table>';
+
+$tableApres = '<table><tr><th>Première colonne</th><th width="300">Deuxième colonne</th><th>Troisième colonne</th></tr>
+<tr><td>Lorem ipsum sit amet</td><td>consectetur additionem adipiscing elit</td><td>Sed non risus</td></tr>
+<tr><td>ultricies sed, dolor</td><td>Cras elementum</td><td>ultrices diam</td></tr>
+<tr><td>Maecenas ligula massa</td><td>varius a, semper congue</td><td>euismod non, mi.</td></tr>
+<tr><td>Proin porttitor</td><td>orci nec nonummy novum molestie</td><td>enim est eleifend</td></tr>
+</table>';
+
+$tableExpected = '<table><tr><th>Première colonne</th><th width="300">Deuxième colonne</th><th>Troisième colonne</th></tr>
+<tr><td>Lorem ipsum sit amet</td><td>consectetur <u>additionem</u> adipiscing elit</td><td>Sed non risus</td></tr>
+<tr><td>ultricies sed, dolor</td><td>Cras elementum</td><td>ultrices diam</td></tr>
+<tr><td><u>Maecenas ligula massa</u></td><td><u>varius a, semper congue</u></td><td><u>euismod non, mi.</u></td></tr>
+<tr><td>Proin porttitor</td><td>orci nec nonummy <u>novum</u> molestie</td><td>enim est eleifend</td></tr>
+</table>';
+
+$allPassed &= runTest(
+    "Complex table with row deletion, insertion, and word modifications",
+    $tableAvant,
+    $tableApres,
+    "<u>",
+    "</u>",
+    $tableExpected
+);
+
 if ($allPassed) {
     echo "\nALL TESTS PASSED!\n";
     exit(0);

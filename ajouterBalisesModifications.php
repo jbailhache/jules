@@ -153,7 +153,20 @@ function tokenizeHtmlForDiff($html) {
 }
 
 /**
- * Calcule pour chaque token de B s'il est inséré/modifié par rapport à A via LCS.
+ * Retourne le poids d'un token pour l'alignement LCS.
+ * Les mots et symboles textuels reçoivent un poids plus élevé (10) que les
+ * balises de structure HTML et espaces (1), pour aligner préférentiellement
+ * le contenu textuel lors de suppressions/insertions de lignes.
+ */
+function getTokenWeight($tok) {
+    if ($tok['type'] === 'word' || $tok['type'] === 'symbol') {
+        return 10;
+    }
+    return 1;
+}
+
+/**
+ * Calcule pour chaque token de B s'il est inséré/modifié par rapport à A via LCS pondéré.
  */
 function computeLcsInsertedFlags($a, $b) {
     $n = count($a);
@@ -166,13 +179,14 @@ function computeLcsInsertedFlags($a, $b) {
         return array_fill(0, $m, true);
     }
 
-    // Calcul de la matrice LCS DP
+    // Calcul de la matrice LCS DP avec pondération
     $dp = array_fill(0, $n + 1, array_fill(0, $m + 1, 0));
 
     for ($i = 1; $i <= $n; $i++) {
         for ($j = 1; $j <= $m; $j++) {
             if ($a[$i - 1]['text'] === $b[$j - 1]['text']) {
-                $dp[$i][$j] = $dp[$i - 1][$j - 1] + 1;
+                $w = getTokenWeight($a[$i - 1]);
+                $dp[$i][$j] = $dp[$i - 1][$j - 1] + $w;
             } else {
                 $dp[$i][$j] = max($dp[$i - 1][$j], $dp[$i][$j - 1]);
             }
