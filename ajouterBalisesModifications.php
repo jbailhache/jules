@@ -57,7 +57,23 @@ function ajouterBalisesModifications($avant, $apres, $debut, $fin) {
             continue;
         }
 
-        // Token type is 'sep' (whitespace, punctuation, etc.)
+        if ($tok['type'] === 'symbol') {
+            if ($inGroup) {
+                $result .= $tok['text'];
+            } else {
+                $nextIsInsertedWord = ($k + 1 < $countB && $tokensB[$k + 1]['type'] === 'word' && $tokensB[$k + 1]['inserted']);
+                if ($nextIsInsertedWord) {
+                    $result .= $debut;
+                    $inGroup = true;
+                    $result .= $tok['text'];
+                } else {
+                    $result .= $tok['text'];
+                }
+            }
+            continue;
+        }
+
+        // Token type is 'space'
         if ($inGroup) {
             $hasFutureInsertedWord = false;
             for ($next = $k + 1; $next < $countB; $next++) {
@@ -92,7 +108,7 @@ function ajouterBalisesModifications($avant, $apres, $debut, $fin) {
 }
 
 /**
- * Découpe un code HTML en un tableau de tokens (tags, mots, séparateurs).
+ * Découpe un code HTML en un tableau de tokens (tags, mots, symboles, espaces).
  */
 function tokenizeHtmlForDiff($html) {
     // Expression régulière pour capturer les balises HTML <...>
@@ -111,17 +127,22 @@ function tokenizeHtmlForDiff($html) {
                 'text' => $part,
             ];
         } else {
-            // Découpage du texte en mots (lettres/chiffres Unicode) et séparateurs
-            $subParts = preg_split('/([\p{L}\p{N}]+)/u', $part, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+            // Découpage du texte en mots (Unicode), espaces et symboles/ponctuation
+            $subParts = preg_split('/([\p{L}\p{N}]+|\s+)/u', $part, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
             foreach ($subParts as $sub) {
                 if (preg_match('/^[\p{L}\p{N}]+$/u', $sub)) {
                     $tokens[] = [
                         'type' => 'word',
                         'text' => $sub,
                     ];
+                } elseif (preg_match('/^\s+$/u', $sub)) {
+                    $tokens[] = [
+                        'type' => 'space',
+                        'text' => $sub,
+                    ];
                 } else {
                     $tokens[] = [
-                        'type' => 'sep',
+                        'type' => 'symbol',
                         'text' => $sub,
                     ];
                 }

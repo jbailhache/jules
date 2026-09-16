@@ -137,6 +137,46 @@ $allPassed &= runTest(
     "<table></table>"
 );
 
+// Test Case 13: Percentage addition (User feedback)
+$allPassed &= runTest(
+    "Percentage addition at end of cell",
+    "<table><tr><td>10</td></tr></table>",
+    "<table><tr><td>12%</td></tr></table>",
+    "<font color=blue><u>",
+    "</u></font>",
+    "<table><tr><td><font color=blue><u>12%</u></font></td></tr></table>"
+);
+
+// Test Case 14: Percentage modification
+$allPassed &= runTest(
+    "Percentage modification",
+    "<table><tr><td>10%</td></tr></table>",
+    "<table><tr><td>12%</td></tr></table>",
+    "<font color=blue><u>",
+    "</u></font>",
+    "<table><tr><td><font color=blue><u>12%</u></font></td></tr></table>"
+);
+
+// Test Case 15: Decimal percentage
+$allPassed &= runTest(
+    "Decimal percentage",
+    "<table><tr><td>10%</td></tr></table>",
+    "<table><tr><td>12,5%</td></tr></table>",
+    "<font color=blue><u>",
+    "</u></font>",
+    "<table><tr><td><font color=blue><u>12,5%</u></font></td></tr></table>"
+);
+
+// Test Case 16: Currency symbols ($ and €)
+$allPassed &= runTest(
+    "Currency symbols ($ and €)",
+    "<table><tr><td>Prix: 10€</td></tr></table>",
+    "<table><tr><td>Prix: 12,50€</td></tr></table>",
+    "<font color=blue><u>",
+    "</u></font>",
+    "<table><tr><td>Prix: <font color=blue><u>12,50€</u></font></td></tr></table>"
+);
+
 if ($allPassed) {
     echo "\nALL TESTS PASSED!\n";
     exit(0);
