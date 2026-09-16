@@ -137,9 +137,9 @@ $allPassed &= runTest(
     "<table></table>"
 );
 
-// Test Case 13: Percentage addition (User feedback)
+// Test Case 13: Percentage addition at end of cell (attached)
 $allPassed &= runTest(
-    "Percentage addition at end of cell",
+    "Percentage addition at end of cell (attached)",
     "<table><tr><td>10</td></tr></table>",
     "<table><tr><td>12%</td></tr></table>",
     "<font color=blue><u>",
@@ -147,9 +147,9 @@ $allPassed &= runTest(
     "<table><tr><td><font color=blue><u>12%</u></font></td></tr></table>"
 );
 
-// Test Case 14: Percentage modification
+// Test Case 14: Percentage modification (attached)
 $allPassed &= runTest(
-    "Percentage modification",
+    "Percentage modification (attached)",
     "<table><tr><td>10%</td></tr></table>",
     "<table><tr><td>12%</td></tr></table>",
     "<font color=blue><u>",
@@ -157,27 +157,37 @@ $allPassed &= runTest(
     "<table><tr><td><font color=blue><u>12%</u></font></td></tr></table>"
 );
 
-// Test Case 15: Decimal percentage
+// Test Case 15: Spaced percentage addition at end of cell (User feedback)
 $allPassed &= runTest(
-    "Decimal percentage",
-    "<table><tr><td>10%</td></tr></table>",
-    "<table><tr><td>12,5%</td></tr></table>",
+    "Spaced percentage addition at end of cell",
+    "<table><tr><td>10 %</td></tr></table>",
+    "<table><tr><td>12 %</td></tr></table>",
     "<font color=blue><u>",
     "</u></font>",
-    "<table><tr><td><font color=blue><u>12,5%</u></font></td></tr></table>"
+    "<table><tr><td><font color=blue><u>12 %</u></font></td></tr></table>"
 );
 
-// Test Case 16: Currency symbols ($ and €)
+// Test Case 16: Spaced percentage with text following
+$allPassed &= runTest(
+    "Spaced percentage with text following",
+    "<table><tr><td>10 % de réduction</td></tr></table>",
+    "<table><tr><td>12 % de réduction</td></tr></table>",
+    "<font color=blue><u>",
+    "</u></font>",
+    "<table><tr><td><font color=blue><u>12 %</u></font> de réduction</td></tr></table>"
+);
+
+// Test Case 17: Currency symbols ($ and €)
 $allPassed &= runTest(
     "Currency symbols ($ and €)",
-    "<table><tr><td>Prix: 10€</td></tr></table>",
-    "<table><tr><td>Prix: 12,50€</td></tr></table>",
+    "<table><tr><td>Prix: 10 €</td></tr></table>",
+    "<table><tr><td>Prix: 12,50 €</td></tr></table>",
     "<font color=blue><u>",
     "</u></font>",
-    "<table><tr><td>Prix: <font color=blue><u>12,50€</u></font></td></tr></table>"
+    "<table><tr><td>Prix: <font color=blue><u>12,50 €</u></font></td></tr></table>"
 );
 
-// Test Case 17: Complex table with row deletion and insertion
+// Test Case 18: Complex table with row deletion and insertion
 $tableAvant = '<table><tr><th>Première colonne</th><th width="200">Deuxième colonne</th><th>Troisième colonne</th></tr>
 <tr><td>Lorem ipsum dolor sit amet</td><td>consectetur adipiscing elit</td><td>Sed non risus</td></tr>
 <tr><td>Suspendisse lectus tortor</td><td>dignissim sit amet</td><td>adipiscing nec</td></tr>

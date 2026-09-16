@@ -75,20 +75,25 @@ function ajouterBalisesModifications($avant, $apres, $debut, $fin) {
 
         // Token type is 'space'
         if ($inGroup) {
-            $hasFutureInsertedWord = false;
+            $keepInGroup = false;
             for ($next = $k + 1; $next < $countB; $next++) {
-                if ($tokensB[$next]['type'] === 'tag') {
+                $nextToken = $tokensB[$next];
+                if ($nextToken['type'] === 'tag') {
                     break;
                 }
-                if ($tokensB[$next]['type'] === 'word') {
-                    if ($tokensB[$next]['inserted']) {
-                        $hasFutureInsertedWord = true;
+                if ($nextToken['type'] === 'word') {
+                    if ($nextToken['inserted']) {
+                        $keepInGroup = true;
                     }
+                    break;
+                }
+                if ($nextToken['type'] === 'symbol') {
+                    $keepInGroup = true;
                     break;
                 }
             }
 
-            if ($hasFutureInsertedWord) {
+            if ($keepInGroup) {
                 $result .= $tok['text'];
             } else {
                 $result .= $fin;
