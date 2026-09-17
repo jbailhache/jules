@@ -157,7 +157,7 @@ $allPassed &= runTest(
     "<table><tr><td><font color=blue><u>12%</u></font></td></tr></table>"
 );
 
-// Test Case 15: Spaced percentage addition at end of cell (User feedback)
+// Test Case 15: Spaced percentage addition at end of cell
 $allPassed &= runTest(
     "Spaced percentage addition at end of cell",
     "<table><tr><td>10 %</td></tr></table>",
@@ -216,6 +216,37 @@ $allPassed &= runTest(
     "<u>",
     "</u>",
     $tableExpected
+);
+
+// Test Case 19: Complex table with 4th column addition repeating col 1 text (User feedback)
+$table4ColAvant = '<table><tr><th>Première colonne</th><th width="200">Deuxième colonne</th><th>Troisième colonne</th></tr>
+<tr><td>Lorem ipsum dolor sit amet</td><td>consectetur adipiscing elit</td><td>Sed non risus</td></tr>
+<tr><td>Suspendisse lectus tortor</td><td>dignissim sit amet</td><td>adipiscing nec</td></tr>
+<tr><td>ultricies sed, dolor</td><td>Cras elementum</td><td>ultrices diam</td></tr>
+<tr><td>Proin porttitor</td><td>orci nec nonummy molestie</td><td>enim est eleifend</td></tr>
+</table>';
+
+$table4ColApres = '<table><tr><th>Première colonne</th><th width="300">Deuxième colonne</th><th>Troisième colonne</th><th>Quatrième colonne</th></tr>
+<tr><td>Lorem ipsum sit amet</td><td>consectetur additionem adipiscing elit</td><td>Sed non risus</td><td>Lorem ipsum dolor sit amet</td></tr>
+<tr><td>ultricies sed, dolor</td><td>Cras elementum</td><td>ultrices diam</td><td>col4 row2</td></tr>
+<tr><td>Maecenas ligula massa</td><td>varius a, semper congue</td><td>euismod non, mi.</td><td>col4 row3</td></tr>
+<tr><td>Proin porttitor</td><td>orci nec nonummy novum molestie</td><td>enim est eleifend</td><td>col4 row4</td></tr>
+</table>';
+
+$table4ColExpected = '<table><tr><th>Première colonne</th><th width="300">Deuxième colonne</th><th>Troisième colonne</th><th><u>Quatrième colonne</u></th></tr>
+<tr><td>Lorem ipsum sit amet</td><td>consectetur <u>additionem</u> adipiscing elit</td><td>Sed non risus</td><td><u>Lorem ipsum dolor sit amet</u></td></tr>
+<tr><td>ultricies sed, dolor</td><td>Cras elementum</td><td>ultrices diam</td><td><u>col4 row2</u></td></tr>
+<tr><td><u>Maecenas ligula massa</u></td><td><u>varius a, semper congue</u></td><td><u>euismod non, mi.</u></td><td><u>col4 row3</u></td></tr>
+<tr><td>Proin porttitor</td><td>orci nec nonummy <u>novum</u> molestie</td><td>enim est eleifend</td><td><u>col4 row4</u></td></tr>
+</table>';
+
+$allPassed &= runTest(
+    "Complex table with 4th column addition repeating col 1 text",
+    $table4ColAvant,
+    $table4ColApres,
+    "<u>",
+    "</u>",
+    $table4ColExpected
 );
 
 if ($allPassed) {

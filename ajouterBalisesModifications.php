@@ -15,6 +15,131 @@ function ajouterBalisesModifications($avant, $apres, $debut, $fin) {
         return $apres;
     }
 
+    $itemsA = parseHtmlRows($avant);
+    $itemsB = parseHtmlRows($apres);
+
+    $rowsA = [];
+    foreach ($itemsA as $it) {
+        if ($it['type'] === 'row') {
+            $rowsA[] = $it['content'];
+        }
+    }
+
+    $rowsB = [];
+    foreach ($itemsB as $it) {
+        if ($it['type'] === 'row') {
+            $rowsB[] = $it['content'];
+        }
+    }
+
+    if (count($rowsA) === 0 || count($rowsB) === 0) {
+        return processRowTokenDiff($avant, $apres, $debut, $fin);
+    }
+
+    $nA = count($rowsA);
+    $nB = count($rowsB);
+
+    // Alignement au niveau des lignes de la table
+    $dp = array_fill(0, $nA + 1, array_fill(0, $nB + 1, 0));
+    for ($i = 1; $i <= $nA; $i++) {
+        for ($j = 1; $j <= $nB; $j++) {
+            $score = computeRowLcsScore($rowsA[$i - 1], $rowsB[$j - 1]);
+            $dp[$i][$j] = max($dp[$i - 1][$j - 1] + $score, $dp[$i - 1][$j], $dp[$i][$j - 1]);
+        }
+    }
+
+    $i = $nA;
+    $j = $nB;
+    $alignedRowA = array_fill(0, $nB, null);
+
+    while ($i > 0 && $j > 0) {
+        $score = computeRowLcsScore($rowsA[$i - 1], $rowsB[$j - 1]);
+        if ($dp[$i][$j] == $dp[$i - 1][$j - 1] + $score && $score > 0) {
+            $alignedRowA[$j - 1] = $rowsA[$i - 1];
+            $i--;
+            $j--;
+        } elseif ($dp[$i - 1][$j] >= $dp[$i][$j - 1]) {
+            $i--;
+        } else {
+            $j--;
+        }
+    }
+
+    $finalOutput = '';
+    $bRowIdx = 0;
+
+    foreach ($itemsB as $it) {
+        if ($it['type'] === 'outer') {
+            $finalOutput .= $it['content'];
+        } else {
+            $rB = $it['content'];
+            $rA = $alignedRowA[$bRowIdx];
+            $bRowIdx++;
+
+            if ($rA === null) {
+                $finalOutput .= processRowTokenDiff('', $rB, $debut, $fin);
+            } else {
+                $finalOutput .= processRowTokenDiff($rA, $rB, $debut, $fin);
+            }
+        }
+    }
+
+    return $finalOutput;
+}
+
+/**
+ * Extrait les lignes <tr>...</tr> et les structures englobantes d'une chaîne HTML.
+ */
+function parseHtmlRows($html) {
+    $pattern = '/(<tr\b[^>]*>.*?<\/tr>)/is';
+    $parts = preg_split($pattern, $html, -1, PREG_SPLIT_DELIM_CAPTURE);
+    $items = [];
+    foreach ($parts as $p) {
+        if ($p === '') {
+            continue;
+        }
+        if (preg_match('/^<tr\b/i', $p)) {
+            $items[] = ['type' => 'row', 'content' => $p];
+        } else {
+            $items[] = ['type' => 'outer', 'content' => $p];
+        }
+    }
+    return $items;
+}
+
+/**
+ * Calcule le score de similarité textuelle entre deux lignes.
+ */
+function computeRowLcsScore($rowA, $rowB) {
+    $tokensA = tokenizeHtmlForDiff($rowA);
+    $tokensB = tokenizeHtmlForDiff($rowB);
+    $nA = count($tokensA);
+    $nB = count($tokensB);
+    if ($nA === 0 || $nB === 0) {
+        return 0;
+    }
+
+    $dp = array_fill(0, $nA + 1, array_fill(0, $nB + 1, 0));
+    for ($i = 1; $i <= $nA; $i++) {
+        for ($j = 1; $j <= $nB; $j++) {
+            if (isTokenMatch($tokensA[$i - 1], $tokensB[$j - 1])) {
+                $dp[$i][$j] = $dp[$i - 1][$j - 1] + getTokenWeight($tokensA[$i - 1]);
+            } else {
+                $dp[$i][$j] = max($dp[$i - 1][$j], $dp[$i][$j - 1]);
+            }
+        }
+    }
+    return $dp[$nA][$nB];
+}
+
+/**
+ * Compare deux lignes (ou blocs de tokens) et ajoute les balises de modification.
+ */
+function processRowTokenDiff($avant, $apres, $debut, $fin) {
+    if ($avant === $apres || $apres === '') {
+        return $apres;
+    }
+
     $tokensA = tokenizeHtmlForDiff($avant);
     $tokensB = tokenizeHtmlForDiff($apres);
 
@@ -158,10 +283,27 @@ function tokenizeHtmlForDiff($html) {
 }
 
 /**
+ * Retourne le nom de la balise HTML (ex: "th" pour "<th>" ou "<th width='200'>").
+ */
+function getTagName($tagText) {
+    if (preg_match('/^<\/?([a-zA-Z0-9]+)/', $tagText, $m)) {
+        return strtolower($m[1]);
+    }
+    return $tagText;
+}
+
+/**
+ * Détermine si deux tokens correspondent dans l'algorithme LCS.
+ */
+function isTokenMatch($tokA, $tokB) {
+    if ($tokA['type'] === 'tag' && $tokB['type'] === 'tag') {
+        return getTagName($tokA['text']) === getTagName($tokB['text']);
+    }
+    return $tokA['text'] === $tokB['text'];
+}
+
+/**
  * Retourne le poids d'un token pour l'alignement LCS.
- * Les mots et symboles textuels reçoivent un poids plus élevé (10) que les
- * balises de structure HTML et espaces (1), pour aligner préférentiellement
- * le contenu textuel lors de suppressions/insertions de lignes.
  */
 function getTokenWeight($tok) {
     if ($tok['type'] === 'word' || $tok['type'] === 'symbol') {
@@ -189,7 +331,7 @@ function computeLcsInsertedFlags($a, $b) {
 
     for ($i = 1; $i <= $n; $i++) {
         for ($j = 1; $j <= $m; $j++) {
-            if ($a[$i - 1]['text'] === $b[$j - 1]['text']) {
+            if (isTokenMatch($a[$i - 1], $b[$j - 1])) {
                 $w = getTokenWeight($a[$i - 1]);
                 $dp[$i][$j] = $dp[$i - 1][$j - 1] + $w;
             } else {
@@ -203,8 +345,12 @@ function computeLcsInsertedFlags($a, $b) {
     $j = $m;
 
     while ($i > 0 && $j > 0) {
-        if ($a[$i - 1]['text'] === $b[$j - 1]['text']) {
-            $bInserted[$j - 1] = false;
+        if ($dp[$i][$j - 1] === $dp[$i][$j]) {
+            $j--;
+        } elseif (isTokenMatch($a[$i - 1], $b[$j - 1]) && $dp[$i][$j] === $dp[$i - 1][$j - 1] + getTokenWeight($a[$i - 1])) {
+            if ($a[$i - 1]['text'] === $b[$j - 1]['text']) {
+                $bInserted[$j - 1] = false;
+            }
             $i--;
             $j--;
         } elseif ($dp[$i - 1][$j] >= $dp[$i][$j - 1]) {
