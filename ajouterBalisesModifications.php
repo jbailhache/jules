@@ -1,0 +1,364 @@
+<?php
+
+/**
+ * Ajoute les balises de modification autour de chaque groupe de mots entiers
+ * ajoutés ou modifiés dans $apres par rapport à $avant.
+ *
+ * @param string $avant Code HTML initial (ex: table HTML).
+ * @param string $apres Code HTML modifié.
+ * @param string $debut Balise(s) marquant le début d'une modification (ex: "<u>").
+ * @param string $fin Balise(s) marquant la fin d'une modification (ex: "</u>").
+ * @return string Code HTML $apres avec les balises de modification ajoutées.
+ */
+function ajouterBalisesModifications($avant, $apres, $debut, $fin) {
+    if ($avant === $apres || $apres === '') {
+        return $apres;
+    }
+
+    $itemsA = parseHtmlRows($avant);
+    $itemsB = parseHtmlRows($apres);
+
+    $rowsA = [];
+    foreach ($itemsA as $it) {
+        if ($it['type'] === 'row') {
+            $rowsA[] = $it['content'];
+        }
+    }
+
+    $rowsB = [];
+    foreach ($itemsB as $it) {
+        if ($it['type'] === 'row') {
+            $rowsB[] = $it['content'];
+        }
+    }
+
+    if (count($rowsA) === 0 || count($rowsB) === 0) {
+        return processRowTokenDiff($avant, $apres, $debut, $fin);
+    }
+
+    $nA = count($rowsA);
+    $nB = count($rowsB);
+
+    // Alignement au niveau des lignes de la table
+    $dp = array_fill(0, $nA + 1, array_fill(0, $nB + 1, 0));
+    for ($i = 1; $i <= $nA; $i++) {
+        for ($j = 1; $j <= $nB; $j++) {
+            $score = computeRowLcsScore($rowsA[$i - 1], $rowsB[$j - 1]);
+            $dp[$i][$j] = max($dp[$i - 1][$j - 1] + $score, $dp[$i - 1][$j], $dp[$i][$j - 1]);
+        }
+    }
+
+    $i = $nA;
+    $j = $nB;
+    $alignedRowA = array_fill(0, $nB, null);
+
+    while ($i > 0 && $j > 0) {
+        $score = computeRowLcsScore($rowsA[$i - 1], $rowsB[$j - 1]);
+        if ($dp[$i][$j] == $dp[$i - 1][$j - 1] + $score && $score > 0) {
+            $alignedRowA[$j - 1] = $rowsA[$i - 1];
+            $i--;
+            $j--;
+        } elseif ($dp[$i - 1][$j] >= $dp[$i][$j - 1]) {
+            $i--;
+        } else {
+            $j--;
+        }
+    }
+
+    $finalOutput = '';
+    $bRowIdx = 0;
+
+    foreach ($itemsB as $it) {
+        if ($it['type'] === 'outer') {
+            $finalOutput .= $it['content'];
+        } else {
+            $rB = $it['content'];
+            $rA = $alignedRowA[$bRowIdx];
+            $bRowIdx++;
+
+            if ($rA === null) {
+                $finalOutput .= processRowTokenDiff('', $rB, $debut, $fin);
+            } else {
+                $finalOutput .= processRowTokenDiff($rA, $rB, $debut, $fin);
+            }
+        }
+    }
+
+    return $finalOutput;
+}
+
+/**
+ * Extrait les lignes <tr>...</tr> et les structures englobantes d'une chaîne HTML.
+ */
+function parseHtmlRows($html) {
+    $pattern = '/(<tr\b[^>]*>.*?<\/tr>)/is';
+    $parts = preg_split($pattern, $html, -1, PREG_SPLIT_DELIM_CAPTURE);
+    $items = [];
+    foreach ($parts as $p) {
+        if ($p === '') {
+            continue;
+        }
+        if (preg_match('/^<tr\b/i', $p)) {
+            $items[] = ['type' => 'row', 'content' => $p];
+        } else {
+            $items[] = ['type' => 'outer', 'content' => $p];
+        }
+    }
+    return $items;
+}
+
+/**
+ * Calcule le score de similarité textuelle entre deux lignes.
+ */
+function computeRowLcsScore($rowA, $rowB) {
+    $tokensA = tokenizeHtmlForDiff($rowA);
+    $tokensB = tokenizeHtmlForDiff($rowB);
+    $nA = count($tokensA);
+    $nB = count($tokensB);
+    if ($nA === 0 || $nB === 0) {
+        return 0;
+    }
+
+    $dp = array_fill(0, $nA + 1, array_fill(0, $nB + 1, 0));
+    for ($i = 1; $i <= $nA; $i++) {
+        for ($j = 1; $j <= $nB; $j++) {
+            if (isTokenMatch($tokensA[$i - 1], $tokensB[$j - 1])) {
+                $dp[$i][$j] = $dp[$i - 1][$j - 1] + getTokenWeight($tokensA[$i - 1]);
+            } else {
+                $dp[$i][$j] = max($dp[$i - 1][$j], $dp[$i][$j - 1]);
+            }
+        }
+    }
+    return $dp[$nA][$nB];
+}
+
+/**
+ * Compare deux lignes (ou blocs de tokens) et ajoute les balises de modification.
+ */
+function processRowTokenDiff($avant, $apres, $debut, $fin) {
+    if ($avant === $apres || $apres === '') {
+        return $apres;
+    }
+
+    $tokensA = tokenizeHtmlForDiff($avant);
+    $tokensB = tokenizeHtmlForDiff($apres);
+
+    $insertedFlags = computeLcsInsertedFlags($tokensA, $tokensB);
+
+    $countB = count($tokensB);
+    for ($i = 0; $i < $countB; $i++) {
+        $tokensB[$i]['inserted'] = $insertedFlags[$i];
+    }
+
+    $result = '';
+    $inGroup = false;
+
+    for ($k = 0; $k < $countB; $k++) {
+        $tok = $tokensB[$k];
+
+        if ($tok['type'] === 'tag') {
+            if ($inGroup) {
+                $result .= $fin;
+                $inGroup = false;
+            }
+            $result .= $tok['text'];
+            continue;
+        }
+
+        if ($tok['type'] === 'word') {
+            if ($tok['inserted']) {
+                if (!$inGroup) {
+                    $result .= $debut;
+                    $inGroup = true;
+                }
+                $result .= $tok['text'];
+            } else {
+                if ($inGroup) {
+                    $result .= $fin;
+                    $inGroup = false;
+                }
+                $result .= $tok['text'];
+            }
+            continue;
+        }
+
+        if ($tok['type'] === 'symbol') {
+            if ($inGroup) {
+                $result .= $tok['text'];
+            } else {
+                $nextIsInsertedWord = ($k + 1 < $countB && $tokensB[$k + 1]['type'] === 'word' && $tokensB[$k + 1]['inserted']);
+                if ($nextIsInsertedWord) {
+                    $result .= $debut;
+                    $inGroup = true;
+                    $result .= $tok['text'];
+                } else {
+                    $result .= $tok['text'];
+                }
+            }
+            continue;
+        }
+
+        // Token type is 'space'
+        if ($inGroup) {
+            $keepInGroup = false;
+            for ($next = $k + 1; $next < $countB; $next++) {
+                $nextToken = $tokensB[$next];
+                if ($nextToken['type'] === 'tag') {
+                    break;
+                }
+                if ($nextToken['type'] === 'word') {
+                    if ($nextToken['inserted']) {
+                        $keepInGroup = true;
+                    }
+                    break;
+                }
+                if ($nextToken['type'] === 'symbol') {
+                    $keepInGroup = true;
+                    break;
+                }
+            }
+
+            if ($keepInGroup) {
+                $result .= $tok['text'];
+            } else {
+                $result .= $fin;
+                $inGroup = false;
+                $result .= $tok['text'];
+            }
+        } else {
+            $result .= $tok['text'];
+        }
+    }
+
+    if ($inGroup) {
+        $result .= $fin;
+    }
+
+    return $result;
+}
+
+/**
+ * Découpe un code HTML en un tableau de tokens (tags, mots, symboles, espaces).
+ */
+function tokenizeHtmlForDiff($html) {
+    // Expression régulière pour capturer les balises HTML <...>
+    $pattern = '/(<(?:"[^"]*"|\'[^\']*\'|[^>])+>)/s';
+    $parts = preg_split($pattern, $html, -1, PREG_SPLIT_DELIM_CAPTURE);
+
+    $tokens = [];
+    foreach ($parts as $part) {
+        if ($part === '') {
+            continue;
+        }
+
+        if (str_starts_with($part, '<') && str_ends_with($part, '>')) {
+            $tokens[] = [
+                'type' => 'tag',
+                'text' => $part,
+            ];
+        } else {
+            // Découpage du texte en mots (Unicode), espaces et symboles/ponctuation
+            $subParts = preg_split('/([\p{L}\p{N}]+|\s+)/u', $part, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+            foreach ($subParts as $sub) {
+                if (preg_match('/^[\p{L}\p{N}]+$/u', $sub)) {
+                    $tokens[] = [
+                        'type' => 'word',
+                        'text' => $sub,
+                    ];
+                } elseif (preg_match('/^\s+$/u', $sub)) {
+                    $tokens[] = [
+                        'type' => 'space',
+                        'text' => $sub,
+                    ];
+                } else {
+                    $tokens[] = [
+                        'type' => 'symbol',
+                        'text' => $sub,
+                    ];
+                }
+            }
+        }
+    }
+    return $tokens;
+}
+
+/**
+ * Retourne le nom de la balise HTML (ex: "th" pour "<th>" ou "<th width='200'>").
+ */
+function getTagName($tagText) {
+    if (preg_match('/^<\/?([a-zA-Z0-9]+)/', $tagText, $m)) {
+        return strtolower($m[1]);
+    }
+    return $tagText;
+}
+
+/**
+ * Détermine si deux tokens correspondent dans l'algorithme LCS.
+ */
+function isTokenMatch($tokA, $tokB) {
+    if ($tokA['type'] === 'tag' && $tokB['type'] === 'tag') {
+        return getTagName($tokA['text']) === getTagName($tokB['text']);
+    }
+    return $tokA['text'] === $tokB['text'];
+}
+
+/**
+ * Retourne le poids d'un token pour l'alignement LCS.
+ */
+function getTokenWeight($tok) {
+    if ($tok['type'] === 'word' || $tok['type'] === 'symbol') {
+        return 10;
+    }
+    return 1;
+}
+
+/**
+ * Calcule pour chaque token de B s'il est inséré/modifié par rapport à A via LCS pondéré.
+ */
+function computeLcsInsertedFlags($a, $b) {
+    $n = count($a);
+    $m = count($b);
+
+    if ($m === 0) {
+        return [];
+    }
+    if ($n === 0) {
+        return array_fill(0, $m, true);
+    }
+
+    // Calcul de la matrice LCS DP avec pondération
+    $dp = array_fill(0, $n + 1, array_fill(0, $m + 1, 0));
+
+    for ($i = 1; $i <= $n; $i++) {
+        for ($j = 1; $j <= $m; $j++) {
+            if (isTokenMatch($a[$i - 1], $b[$j - 1])) {
+                $w = getTokenWeight($a[$i - 1]);
+                $dp[$i][$j] = $dp[$i - 1][$j - 1] + $w;
+            } else {
+                $dp[$i][$j] = max($dp[$i - 1][$j], $dp[$i][$j - 1]);
+            }
+        }
+    }
+
+    $bInserted = array_fill(0, $m, true);
+    $i = $n;
+    $j = $m;
+
+    while ($i > 0 && $j > 0) {
+        if ($dp[$i][$j - 1] === $dp[$i][$j]) {
+            $j--;
+        } elseif (isTokenMatch($a[$i - 1], $b[$j - 1]) && $dp[$i][$j] === $dp[$i - 1][$j - 1] + getTokenWeight($a[$i - 1])) {
+            if ($a[$i - 1]['text'] === $b[$j - 1]['text']) {
+                $bInserted[$j - 1] = false;
+            }
+            $i--;
+            $j--;
+        } elseif ($dp[$i - 1][$j] >= $dp[$i][$j - 1]) {
+            $i--;
+        } else {
+            $j--;
+        }
+    }
+
+    return $bInserted;
+}
