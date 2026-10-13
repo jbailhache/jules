@@ -12,6 +12,25 @@
         SetHandler "proxy:unix:/run/php/php8.6-fpm.sock|fcgi://localhost/"
     </FilesMatch>
 
+    <IfModule mod_headers.c>
+
+        # CGICO-66
+        # Code 02 - Protocole et marqueurs web – Question 84a [ADR 145 Absence de l’entête de sécurité X-CTO (Content-Type-Option)]
+        # Empêcher le MIME sniffing
+        Header always set X-Content-Type-Options "nosniff"
+
+        # CGICO-67
+        # Code 03 – Protocole et marqueurs web – Question 84b [ADR 146 Absence de l’entête de sécurité X-FO (Frame-Option)]
+        # Anti-clickjacking
+        Header always set X-Frame-Options "DENY"
+
+        # CGICO-68
+        # Code 04 – Protocole et marqueurs web – Question 84c [ADR 147 Absence de l’entête de sécurité CSP : frame-ancestors]
+        # Entête de sécurité CSP : frame-ancestors
+        Header always set Content-Security-Policy "frame-ancestors 'self';"
+
+    </IfModule>
+
     ErrorLog ${APACHE_LOG_DIR}/cgicodif_error.log
     CustomLog ${APACHE_LOG_DIR}/cgicodif_access.log combined
 </VirtualHost>
