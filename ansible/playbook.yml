@@ -49,6 +49,37 @@
         state: started
         enabled: true
 
+    - name: Find pg_hba.conf path for installed PostgreSQL
+      ansible.builtin.find:
+        paths: /etc/postgresql
+        patterns: "pg_hba.conf"
+        recurse: true
+      register: pg_hba_find
+
+    - name: Configure pg_hba.conf for trust authentication on local connections
+      ansible.builtin.lineinfile:
+        path: "{{ item.path }}"
+        regexp: '^host\s+all\s+all\s+127\.0\.0\.1/32\s+'
+        line: 'host    all             all             127.0.0.1/32            trust'
+      loop: "{{ pg_hba_find.files }}"
+      notify: Restart PostgreSQL
+
+    - name: Configure pg_hba.conf for trust authentication on IPv6 local connections
+      ansible.builtin.lineinfile:
+        path: "{{ item.path }}"
+        regexp: '^host\s+all\s+all\s+::1/128\s+'
+        line: 'host    all             all             ::1/128                 trust'
+      loop: "{{ pg_hba_find.files }}"
+      notify: Restart PostgreSQL
+
+    - name: Configure pg_hba.conf for trust authentication on local socket connections
+      ansible.builtin.lineinfile:
+        path: "{{ item.path }}"
+        regexp: '^local\s+all\s+all\s+'
+        line: 'local   all             all                                     trust'
+      loop: "{{ pg_hba_find.files }}"
+      notify: Restart PostgreSQL
+
     - name: Install build dependencies for compiling PHP 8.6
       ansible.builtin.apt:
         name:
@@ -232,6 +263,11 @@
         enabled: true
 
   handlers:
+    - name: Restart PostgreSQL
+      ansible.builtin.service:
+        name: postgresql
+        state: restarted
+
     - name: Restart Apache
       ansible.builtin.service:
         name: apache2
