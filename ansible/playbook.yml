@@ -12,6 +12,7 @@
       https_proxy: "http://proxy.infra.dgfip:3128"
       HTTP_PROXY: "http://proxy.infra.dgfip:3128"
       HTTPS_PROXY: "http://proxy.infra.dgfip:3128"
+      GIT_SSL_NO_VERIFY: "true"
 
   environment: "{{ proxy_env }}"
 
@@ -21,10 +22,18 @@
         update_cache: true
         cache_valid_time: 3600
 
-    - name: Install Git
+    - name: Install Git and CA certificates
       ansible.builtin.apt:
-        name: git
+        name:
+          - git
+          - ca-certificates
         state: present
+
+    - name: Ensure git SSL verification is configured globally
+      community.general.git_config:
+        name: http.sslVerify
+        scope: system
+        value: "false"
 
     - name: Install PostgreSQL server and client libraries
       ansible.builtin.apt:
