@@ -7,6 +7,13 @@
     php_install_dir: "/usr/local/php8.6"
     php_src_dir: "/usr/local/src/php-src"
     app_dir: "/data/cgicodif"
+    proxy_env:
+      http_proxy: "http://proxy.infra.dgfip:3128"
+      https_proxy: "http://proxy.infra.dgfip:3128"
+      HTTP_PROXY: "http://proxy.infra.dgfip:3128"
+      HTTPS_PROXY: "http://proxy.infra.dgfip:3128"
+
+  environment: "{{ proxy_env }}"
 
   tasks:
     - name: Update apt cache
