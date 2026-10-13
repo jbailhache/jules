@@ -87,6 +87,7 @@
           ./configure
           --prefix={{ php_install_dir }}
           --sysconfdir={{ php_install_dir }}/etc
+          --with-config-file-path={{ php_install_dir }}/lib
           --enable-fpm
           --with-fpm-user=www-data
           --with-fpm-group=www-data
@@ -114,6 +115,19 @@
         cmd: make install
         chdir: "{{ php_src_dir }}"
         creates: "{{ php_install_dir }}/sbin/php-fpm"
+
+    - name: Ensure PHP lib directory exists for php.ini
+      ansible.builtin.file:
+        path: "{{ php_install_dir }}/lib"
+        state: directory
+        mode: '0755'
+
+    - name: Deploy php.ini configuration file
+      ansible.builtin.template:
+        src: templates/php.ini.j2
+        dest: "{{ php_install_dir }}/lib/php.ini"
+        mode: '0644'
+      notify: Restart PHP-FPM
 
     - name: Ensure php-fpm.d directory exists
       ansible.builtin.file:
