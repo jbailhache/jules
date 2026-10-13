@@ -116,15 +116,15 @@
         creates: "{{ php_install_dir }}/sbin/php-fpm"
 
     - name: Create FPM configuration files if not present
-      ansible.builtin.shell:
-        cmd: |
-          if [ ! -f {{ php_install_dir }}/etc/php-fpm.conf ]; then
-            cp {{ php_install_dir }}/etc/php-fpm.conf.default {{ php_install_dir }}/etc/php-fpm.conf
-          fi
-          if [ ! -f {{ php_install_dir }}/etc/php-fpm.d/www.conf ]; then
-            cp {{ php_install_dir }}/etc/php-fpm.d/www.conf.default {{ php_install_dir }}/etc/php-fpm.d/www.conf
-          fi
-        creates: "{{ php_install_dir }}/etc/php-fpm.conf"
+      ansible.builtin.copy:
+        src: "{{ php_install_dir }}/etc/{{ item.src }}"
+        dest: "{{ php_install_dir }}/etc/{{ item.dest }}"
+        remote_src: true
+        force: false
+        mode: '0644'
+      loop:
+        - { src: 'php-fpm.conf.default', dest: 'php-fpm.conf' }
+        - { src: 'php-fpm.d/www.conf.default', dest: 'php-fpm.d/www.conf' }
 
     - name: Enable include directive in php-fpm.conf
       ansible.builtin.lineinfile:
@@ -132,20 +132,41 @@
         regexp: '^\s*;?\s*include\s*='
         line: "include={{ php_install_dir }}/etc/php-fpm.d/*.conf"
 
+    - name: Set user in www.conf
+      ansible.builtin.lineinfile:
+        path: "{{ php_install_dir }}/etc/php-fpm.d/www.conf"
+        regexp: '^\s*;?\s*user\s*='
+        line: 'user = www-data'
+
+    - name: Set group in www.conf
+      ansible.builtin.lineinfile:
+        path: "{{ php_install_dir }}/etc/php-fpm.d/www.conf"
+        regexp: '^\s*;?\s*group\s*='
+        line: 'group = www-data'
+
     - name: Ensure php-fpm listens on socket /run/php/php8.6-fpm.sock
       ansible.builtin.lineinfile:
         path: "{{ php_install_dir }}/etc/php-fpm.d/www.conf"
-        regexp: '^listen\s*='
+        regexp: '^\s*;?\s*listen\s*='
         line: 'listen = /run/php/php8.6-fpm.sock'
 
-    - name: Set php-fpm socket owner and permissions in www.conf
-      ansible.builtin.blockinfile:
+    - name: Set listen.owner in www.conf
+      ansible.builtin.lineinfile:
         path: "{{ php_install_dir }}/etc/php-fpm.d/www.conf"
-        insertafter: '^listen = /run/php/php8.6-fpm.sock'
-        block: |
-          listen.owner = www-data
-          listen.group = www-data
-          listen.mode = 0660
+        regexp: '^\s*;?\s*listen\.owner\s*='
+        line: 'listen.owner = www-data'
+
+    - name: Set listen.group in www.conf
+      ansible.builtin.lineinfile:
+        path: "{{ php_install_dir }}/etc/php-fpm.d/www.conf"
+        regexp: '^\s*;?\s*listen\.group\s*='
+        line: 'listen.group = www-data'
+
+    - name: Set listen.mode in www.conf
+      ansible.builtin.lineinfile:
+        path: "{{ php_install_dir }}/etc/php-fpm.d/www.conf"
+        regexp: '^\s*;?\s*listen\.mode\s*='
+        line: 'listen.mode = 0660'
 
     - name: Ensure run directory for PHP socket exists
       ansible.builtin.file:
