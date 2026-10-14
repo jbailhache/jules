@@ -1,0 +1,289 @@
+---
+- name: Provision Debian 12 Server with Git, PostgreSQL, PHP 8.6 FPM, and Apache
+  hosts: all
+  become: true
+  vars:
+    php_version: "8.6"
+    php_install_dir: "/usr/local/php8.6"
+    php_src_dir: "/usr/local/src/php-src"
+    app_dir: "/data/cgicodif"
+    proxy_env:
+      http_proxy: "http://proxy.infra.dgfip:3128"
+      https_proxy: "http://proxy.infra.dgfip:3128"
+      HTTP_PROXY: "http://proxy.infra.dgfip:3128"
+      HTTPS_PROXY: "http://proxy.infra.dgfip:3128"
+      GIT_SSL_NO_VERIFY: "true"
+
+  environment: "{{ proxy_env }}"
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install Git and CA certificates
+      ansible.builtin.apt:
+        name:
+          - git
+          - ca-certificates
+        state: present
+
+    - name: Ensure git SSL verification is configured globally
+      community.general.git_config:
+        name: http.sslVerify
+        scope: system
+        value: "false"
+
+    - name: Install PostgreSQL server and client libraries
+      ansible.builtin.apt:
+        name:
+          - postgresql
+          - postgresql-contrib
+          - libpq-dev
+        state: present
+
+    - name: Ensure PostgreSQL service is running and enabled
+      ansible.builtin.service:
+        name: postgresql
+        state: started
+        enabled: true
+
+    - name: Create PostgreSQL user cgicodif
+      ansible.builtin.command:
+        cmd: >
+          psql -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'cgicodif')
+          THEN CREATE ROLE cgicodif WITH LOGIN PASSWORD 'cgicodif'; END IF; END \$\$;"
+      become: true
+      become_user: postgres
+      changed_when: false
+
+    - name: Find pg_hba.conf path for installed PostgreSQL
+      ansible.builtin.find:
+        paths: /etc/postgresql
+        patterns: "pg_hba.conf"
+        recurse: true
+      register: pg_hba_find
+
+    - name: Configure pg_hba.conf for trust authentication on local connections
+      ansible.builtin.lineinfile:
+        path: "{{ item.path }}"
+        regexp: '^host\s+all\s+all\s+127\.0\.0\.1/32\s+'
+        line: 'host    all             all             127.0.0.1/32            trust'
+      loop: "{{ pg_hba_find.files }}"
+      notify: Restart PostgreSQL
+
+    - name: Configure pg_hba.conf for trust authentication on IPv6 local connections
+      ansible.builtin.lineinfile:
+        path: "{{ item.path }}"
+        regexp: '^host\s+all\s+all\s+::1/128\s+'
+        line: 'host    all             all             ::1/128                 trust'
+      loop: "{{ pg_hba_find.files }}"
+      notify: Restart PostgreSQL
+
+    - name: Configure pg_hba.conf for trust authentication on local socket connections
+      ansible.builtin.lineinfile:
+        path: "{{ item.path }}"
+        regexp: '^local\s+all\s+all\s+'
+        line: 'local   all             all                                     trust'
+      loop: "{{ pg_hba_find.files }}"
+      notify: Restart PostgreSQL
+
+    - name: Install build dependencies for compiling PHP 8.6
+      ansible.builtin.apt:
+        name:
+          - build-essential
+          - autoconf
+          - bison
+          - re2c
+          - pkg-config
+          - libxml2-dev
+          - libsqlite3-dev
+          - libssl-dev
+          - libcurl4-openssl-dev
+          - libpng-dev
+          - libjpeg-dev
+          - libonig-dev
+          - libzip-dev
+          - libreadline-dev
+        state: present
+
+    - name: Clone PHP source repository (branch PHP-8.6)
+      ansible.builtin.git:
+        repo: 'https://github.com/php/php-src.git'
+        dest: "{{ php_src_dir }}"
+        version: 'PHP-8.6'
+        depth: 1
+
+    - name: Run buildconf in PHP source directory
+      ansible.builtin.command:
+        cmd: ./buildconf --force
+        chdir: "{{ php_src_dir }}"
+        creates: "{{ php_src_dir }}/configure"
+
+    - name: Configure PHP 8.6 build
+      ansible.builtin.command:
+        cmd: >
+          ./configure
+          --prefix={{ php_install_dir }}
+          --sysconfdir={{ php_install_dir }}/etc
+          --with-config-file-path={{ php_install_dir }}/lib
+          --enable-fpm
+          --with-fpm-user=www-data
+          --with-fpm-group=www-data
+          --with-pgsql
+          --with-pdo-pgsql
+          --with-openssl
+          --with-zlib
+          --with-curl
+          --enable-mbstring
+          --enable-sockets
+          --enable-bcmath
+          --with-readline
+          --with-zip
+        chdir: "{{ php_src_dir }}"
+        creates: "{{ php_src_dir }}/Makefile"
+
+    - name: Compile PHP 8.6
+      ansible.builtin.command:
+        cmd: make -j{{ ansible_processor_vcpus | default(2) }}
+        chdir: "{{ php_src_dir }}"
+        creates: "{{ php_src_dir }}/sapi/fpm/php-fpm"
+
+    - name: Install PHP 8.6
+      ansible.builtin.command:
+        cmd: make install
+        chdir: "{{ php_src_dir }}"
+        creates: "{{ php_install_dir }}/sbin/php-fpm"
+
+    - name: Ensure PHP lib directory exists for php.ini
+      ansible.builtin.file:
+        path: "{{ php_install_dir }}/lib"
+        state: directory
+        mode: '0755'
+
+    - name: Deploy php.ini configuration file
+      ansible.builtin.template:
+        src: templates/php.ini.j2
+        dest: "{{ php_install_dir }}/lib/php.ini"
+        mode: '0644'
+      notify: Restart PHP-FPM
+
+    - name: Ensure php-fpm.d directory exists
+      ansible.builtin.file:
+        path: "{{ php_install_dir }}/etc/php-fpm.d"
+        state: directory
+        mode: '0755'
+
+    - name: Deploy php-fpm.conf configuration file
+      ansible.builtin.template:
+        src: templates/php-fpm.conf.j2
+        dest: "{{ php_install_dir }}/etc/php-fpm.conf"
+        mode: '0644'
+      notify: Restart PHP-FPM
+
+    - name: Deploy www.conf pool configuration file
+      ansible.builtin.template:
+        src: templates/www.conf.j2
+        dest: "{{ php_install_dir }}/etc/php-fpm.d/www.conf"
+        mode: '0644'
+      notify: Restart PHP-FPM
+
+    - name: Ensure run directory for PHP socket exists
+      ansible.builtin.file:
+        path: /run/php
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Create systemd service unit for PHP 8.6 FPM
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/php8.6-fpm.service
+        mode: '0644'
+        content: |
+          [Unit]
+          Description=The PHP 8.6 FastCGI Process Manager
+          After=network.target
+
+          [Service]
+          Type=simple
+          PIDFile=/run/php8.6-fpm.pid
+          RuntimeDirectory=php
+          ExecStart={{ php_install_dir }}/sbin/php-fpm --nodaemonize --fpm-config {{ php_install_dir }}/etc/php-fpm.conf
+          ExecReload=/bin/kill -USR2 $MAINPID
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Ensure PHP 8.6 FPM service is started and enabled
+      ansible.builtin.service:
+        name: php8.6-fpm
+        state: started
+        enabled: true
+        daemon_reload: true
+
+    - name: Install Apache web server
+      ansible.builtin.apt:
+        name: apache2
+        state: present
+
+    - name: Enable Apache modules required for site configuration and php-fpm proxy
+      ansible.builtin.command:
+        cmd: "a2enmod {{ item }}"
+        creates: "/etc/apache2/mods-enabled/{{ item }}.load"
+      loop:
+        - proxy
+        - proxy_fcgi
+        - rewrite
+        - headers
+      notify: Restart Apache
+
+    - name: Create web application directory /data/cgicodif
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Deploy Apache VirtualHost site configuration
+      ansible.builtin.template:
+        src: templates/cgicodif.conf.j2
+        dest: /etc/apache2/sites-available/cgicodif.conf
+        mode: '0644'
+      notify: Restart Apache
+
+    - name: Enable cgicodif site in Apache
+      ansible.builtin.command:
+        cmd: a2ensite cgicodif.conf
+        creates: /etc/apache2/sites-enabled/cgicodif.conf
+      notify: Restart Apache
+
+    - name: Disable default Apache site
+      ansible.builtin.command:
+        cmd: a2dissite 000-default.conf
+        removes: /etc/apache2/sites-enabled/000-default.conf
+      notify: Restart Apache
+
+    - name: Ensure Apache service is started and enabled
+      ansible.builtin.service:
+        name: apache2
+        state: started
+        enabled: true
+
+  handlers:
+    - name: Restart PostgreSQL
+      ansible.builtin.service:
+        name: postgresql
+        state: restarted
+
+    - name: Restart Apache
+      ansible.builtin.service:
+        name: apache2
+        state: restarted
+
+    - name: Restart PHP-FPM
+      ansible.builtin.service:
+        name: php8.6-fpm
+        state: restarted

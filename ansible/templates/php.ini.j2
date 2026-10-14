@@ -1,0 +1,40 @@
+[PHP]
+
+display_errors = On
+display_startup_errors = Off
+log_errors = On
+error_log = /var/log/php_errors.log
+error_reporting = E_ALL & ~E_WARNING & ~E_NOTICE & ~E_DEPRECATED & ~E_USER_WARNING & ~E_USER_NOTICE & ~E_STRICT
+
+variables_order = "GPCS"
+request_order = "GP"
+
+register_argc_argv = Off
+auto_globals_jit = On
+
+post_max_size = 32M
+upload_max_filesize = 32M
+default_mimetype = "text/html"
+default_charset = "UTF-8"
+
+[CLI Server]
+cli_server.color = On
+
+[Date]
+date.timezone = "Europe/Paris"
+
+[Pdo_pgsql]
+pdo_pgsql.secure_buffers = 1
+
+[pgsql]
+pgsql.allow_persistent = On
+pgsql.max_persistent = -1
+pgsql.max_links = -1
+pgsql.auto_reset_persistent = Off
+pgsql.ignore_notice = 0
+pgsql.log_notice = 0
+
+[Session]
+session.cookie_secure = 1
+session.cookie_httponly = 1
+session.cookie_samesite = Lax
