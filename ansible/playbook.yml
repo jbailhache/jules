@@ -52,9 +52,8 @@
     - name: Create PostgreSQL user cgicodif
       ansible.builtin.command:
         cmd: >
-          su - postgres -c "psql -c \"DO \\\$\$ BEGIN IF NOT EXISTS
-          (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'cgicodif')
-          THEN CREATE ROLE cgicodif WITH LOGIN PASSWORD 'cgicodif'; END IF; END \\\$\$;\""
+          su - postgres -c "psql -tc \"SELECT 1 FROM pg_roles WHERE rolname='cgicodif'\"
+          | grep -q 1 || psql -c \"CREATE USER cgicodif WITH PASSWORD 'cgicodif';\""
       changed_when: false
 
     - name: Find pg_hba.conf path for installed PostgreSQL
