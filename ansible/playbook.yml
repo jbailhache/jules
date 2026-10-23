@@ -1,10 +1,10 @@
 ---
-- name: Provision Debian 12 Server with Git, PostgreSQL, PHP 8.3 FPM, and Apache
+- name: Provision Debian 12 Server with Git, PostgreSQL, PHP 8.6 FPM, and Apache
   hosts: all
   become: true
   vars:
-    php_version: "8.3"
-    php_install_dir: "/usr/local/php8.3"
+    php_version: "8.6"
+    php_install_dir: "/usr/local/php8.6"
     php_src_dir: "/usr/local/src/php-src"
     app_dir: "/data/cgicodif"
     proxy_env:
@@ -87,7 +87,7 @@
       loop: "{{ pg_hba_find.files }}"
       notify: Restart PostgreSQL
 
-    - name: Install build dependencies for compiling PHP 8.3
+    - name: Install build dependencies for compiling PHP 8.6
       ansible.builtin.apt:
         name:
           - build-essential
@@ -106,11 +106,11 @@
           - libreadline-dev
         state: present
 
-    - name: Clone PHP source repository (branch PHP-8.3)
+    - name: Clone PHP source repository (branch PHP-8.6)
       ansible.builtin.git:
         repo: 'https://github.com/php/php-src.git'
         dest: "{{ php_src_dir }}"
-        version: 'PHP-8.3'
+        version: 'PHP-8.6'
         depth: 1
 
     - name: Run buildconf in PHP source directory
@@ -119,7 +119,7 @@
         chdir: "{{ php_src_dir }}"
         creates: "{{ php_src_dir }}/configure"
 
-    - name: Configure PHP 8.3 build
+    - name: Configure PHP 8.6 build
       ansible.builtin.command:
         cmd: >
           ./configure
@@ -142,13 +142,13 @@
         chdir: "{{ php_src_dir }}"
         creates: "{{ php_src_dir }}/Makefile"
 
-    - name: Compile PHP 8.3
+    - name: Compile PHP 8.6
       ansible.builtin.command:
         cmd: make -j{{ ansible_processor_vcpus | default(2) }}
         chdir: "{{ php_src_dir }}"
         creates: "{{ php_src_dir }}/sapi/fpm/php-fpm"
 
-    - name: Install PHP 8.3
+    - name: Install PHP 8.6
       ansible.builtin.command:
         cmd: make install
         chdir: "{{ php_src_dir }}"
@@ -195,18 +195,18 @@
         group: www-data
         mode: '0755'
 
-    - name: Create systemd service unit for PHP 8.3 FPM
+    - name: Create systemd service unit for PHP 8.6 FPM
       ansible.builtin.copy:
-        dest: /etc/systemd/system/php8.3-fpm.service
+        dest: /etc/systemd/system/php8.6-fpm.service
         mode: '0644'
         content: |
           [Unit]
-          Description=The PHP 8.3 FastCGI Process Manager
+          Description=The PHP 8.6 FastCGI Process Manager
           After=network.target
 
           [Service]
           Type=simple
-          PIDFile=/run/php8.3-fpm.pid
+          PIDFile=/run/php8.6-fpm.pid
           RuntimeDirectory=php
           ExecStart={{ php_install_dir }}/sbin/php-fpm --nodaemonize --fpm-config {{ php_install_dir }}/etc/php-fpm.conf
           ExecReload=/bin/kill -USR2 $MAINPID
@@ -214,9 +214,9 @@
           [Install]
           WantedBy=multi-user.target
 
-    - name: Ensure PHP 8.3 FPM service is started and enabled
+    - name: Ensure PHP 8.6 FPM service is started and enabled
       ansible.builtin.service:
-        name: php8.3-fpm
+        name: php8.6-fpm
         state: started
         enabled: true
         daemon_reload: true
@@ -283,5 +283,5 @@
 
     - name: Restart PHP-FPM
       ansible.builtin.service:
-        name: php8.3-fpm
+        name: php8.6-fpm
         state: restarted

@@ -9,7 +9,7 @@
     </Directory>
 
     <FilesMatch \.php$>
-        SetHandler "proxy:unix:/run/php/php8.3-fpm.sock|fcgi://localhost/"
+        SetHandler "proxy:unix:/run/php/php8.6-fpm.sock|fcgi://localhost/"
     </FilesMatch>
 
     <IfModule mod_headers.c>
