@@ -112,6 +112,16 @@
         dest: "{{ php_src_dir }}"
         version: 'PHP-8.3'
         depth: 1
+      register: php_git_checkout
+
+    - name: Clean PHP build artifacts if git checkout changed or Makefile exists
+      ansible.builtin.command:
+        cmd: git clean -xfd
+        chdir: "{{ php_src_dir }}"
+      when: php_git_checkout.changed
+      changed_when: true
+      tags:
+        - skip_ansible_lint # noqa: no-handler
 
     - name: Run buildconf in PHP source directory
       ansible.builtin.command:
