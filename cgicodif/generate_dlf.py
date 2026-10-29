@@ -10,7 +10,7 @@ def main():
     orig = 'Direction de la Législation Fiscale'
 
     # Calculate width
-    x = 1.0
+    x = 0.0
     for i, c in enumerate(orig):
         if (i == 0 and c == 'D') or (i == 16 and c == 'L') or (i == 28 and c == 'F'):
             f = font37
@@ -20,16 +20,13 @@ def main():
             ch = c.upper()
         x += f.getlength(ch)
 
-    img_w = int(round(x)) + 1
+    img_w = int(round(x))
     img = Image.new('RGB', (img_w, 39), 'white')
     draw = ImageDraw.Draw(img)
 
-    # 1px border around image
-    draw.rectangle([0, 0, img_w - 1, 38], outline='black', width=1)
-
     # Baseline 32 (aligns text vertically within 39px height)
     baseline = 32
-    curr_x = 1.0
+    curr_x = 0.0
     for i, c in enumerate(orig):
         if (i == 0 and c == 'D') or (i == 16 and c == 'L') or (i == 28 and c == 'F'):
             f = font37
