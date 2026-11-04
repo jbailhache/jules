@@ -132,18 +132,6 @@ foreach ($data as $rowIndex => $row) {
         // Enlever width
         $cellAttributes = preg_replace('/\s*width="[^"]*\s*"/', '', $cellAttributes);
 
-        // $escapedCell = $cell ? htmlspecialchars($cell, ENT_QUOTES | ENT_HTML5, 'UTF-8') : $cell;
-        // 
-        // $escapedCell = str_replace("\n", "<br>", $escapedCell);
-        // $escapedCell = str_replace("[b]", "<b>", $escapedCell);
-        // $escapedCell = str_replace("[/b]", "</b>", $escapedCell);
-        // $escapedCell = str_replace("[i]", "<i>", $escapedCell);
-        // $escapedCell = str_replace("[/i]", "</i>", $escapedCell);
-        // $escapedCell = str_replace("[sup]", "<sup>", $escapedCell);
-        // $escapedCell = str_replace("[/sup]", "</sup>", $escapedCell);
-        // $escapedCell = str_replace("[sub]", "<sub>", $escapedCell);
-        // $escapedCell = str_replace("[/sub]", "</sub>", $escapedCell);
-
         $escapedCell = customTagsToHtml($cell);
 
         // echo " cellStyle='$cellStyle' cellAttributes='$cellAttributes' "; 
