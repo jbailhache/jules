@@ -19,7 +19,13 @@
             <br>Tableau : <br>
             <?php echo $tableau; ?>
             <br>HTML : <br>
-            <?php echo $html; ?>
+            <table>
+                <tr>
+                    <td class="textecourant" valign="top">
+                        <?php echo $html; ?>
+                    </td>
+                </tr>
+            </table>
 
   <!-- Inclure le CSS de jSuites (optionnel pour certains composants comme le calendrier) -->
   <link rel="stylesheet" href="node_modules/jsuites/dist/jsuites.css">
