@@ -27,6 +27,7 @@
       }
 
       function initializeTable(index, raw_json) {
+        console.log("initializeTable index="+index);
         // const raw_json = `<?php echo $json[0]; ?>`;
         const json = raw_json.replace(/\r/g, "\\r");
         // alert(json);
@@ -57,9 +58,10 @@
             licenseKey: 'non-commercial-and-evaluation' // Pour usage non commercial
         });
 	*/
-
+        console.log(1);
         let headers = data[0];
         agrandissement = <?php echo $agrandissement; ?>;
+        console.log(2);
         let columns = headers.map((header, index) => ({ 
 
             // Tableaux : Titres des colonnes mis en en-tête du tableau
@@ -71,7 +73,7 @@
             width: htmlColWidths[index] * agrandissement || 250, 
             wordWrap: true, 
         }));
-
+        console.log(3);
         /*
         // === Récupération des largeurs depuis le HTML ===
         // Adapter le sélecteur à la table HTML d’origine
@@ -110,7 +112,7 @@
 
         // Tableaux : Titres des colonnes traités comme des cellules ordinaires
         let data1 = data;
-
+        console.log(4);
         // Conversion du format Handsontable -> Jspreadsheet
         function convertMergeCellsToJSS(mergeCells) {
             const result = {};
@@ -139,7 +141,7 @@
         // alert(JSON.stringify(mergeCells));
 
         const mergeCellsJSS = convertMergeCellsToJSS(mergeCells);
-
+        console.log(5);
 	// const mergeCellsJSS = { A1: [1, 2], A3: [1, 2] };
 
         // helper: convert column index -> Excel-like letters
@@ -177,11 +179,13 @@
             return columnWidths;
         }
 
+        console.log(6);
+
         fetch('node_modules/jspreadsheet-ce/resources/lang/fr_FR.json')
         .then(response => response.json())
         .then(fr => {
         // jspreadsheet.setLocale(fr);          
-
+        console.log(7);
         const hot = jspreadsheet(container, {
             data: data1,
             columns: columns,
@@ -551,7 +555,7 @@
                 return itemsArr;
             }*/
         });
-
+    
         for (row=0; row<attributes.length; row++) {
             for (col=0; col<attributes[row].length; col++) {
 
@@ -816,11 +820,17 @@
         //         alert('Erreur lors du chargement du tableau : ' + error);
         //     }
         // })();
+        console.log("fin initializeTable");
       }
 <?php
       for ($index=0; $index<count($json); $index++) {
 ?>
+        console.log("avant");
+        //alert("avant");
+        //alert(`<?php echo $json[$index]; ?>`);
         initializeTable(<?php echo $index; ?>, `<?php echo $json[$index]; ?>`);
+        console.log("apres");
+        //alert("apres");
 <?php
       }
 ?>
