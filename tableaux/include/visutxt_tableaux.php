@@ -1,16 +1,13 @@
 
 <script>
       function getColumnWidthsFromHtml(table) {
-        // alert(table.outerHTML);
 
         if (!table) {
-            // alert('Table vide');
             return [];
         }
         // On prend la première ligne (en-tête ou première ligne de données)
         const firstRow = table.querySelector('tr');
         if (!firstRow) {
-            // alert('Aucune ligne');
             return [];
         }
 
@@ -29,13 +26,10 @@
       function initializeTable(index, raw_json) {
         // const raw_json = `<?php echo $json[0]; ?>`;
         const json = raw_json.replace(/\r/g, "\\r");
-        // alert(json);
         const result = JSON.parse(json);
         const data = result.data;
         const mergeCells = result.mergeCells;
         const attributes = result.attributes;
-        // alert(JSON.stringify(attributes[0][0]['style']));
-        // alert(attributes.length);
         const htmlColWidths = result.colWidths || [];
 
         // Initialisation du tableau Handsontable
@@ -532,16 +526,13 @@
 
             // const data = hot.getData();
             const data1 = hot.getData();
-            // alert(JSON.stringify(data1));
             const headers = columns.map(c => c.title);
             const data = [headers, ...data1];
 
             // const mergeCells = hot.getPlugin('mergeCells').mergedCellsCollection.mergedCells;
             const mergeCellsJSS = hot.getMerge();
-            // alert(JSON.stringify(mergeCells));
 
             const colWidths = getColumnWidths(hot);
-            // alert('Largeurs des colonnes : ' + widths.join(', '));
 
             // Convertir une référence de cellule type "B3" en indices (0-based)
             function cellRefToIndices(ref) {
@@ -594,7 +585,6 @@
             }
 
             const mergeCells = convertJSStoHT(mergeCellsJSS);
-            // alert(JSON.stringify(mergeCells));
 
             // Récupérer les dimensions du tableau
             let rows = data1.length;
