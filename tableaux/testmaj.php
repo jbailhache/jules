@@ -1,10 +1,16 @@
 <?php
     require_once("include/fonction.php");
     require_once("include/htmlEditionTableaux.php");
+
     global $json;
+
     $majauto = false;
     $agrandissement = 1.5;
     $sannee = 2026;
+    $sartdeb = '';
+    $sartfin = '';
+    $sdocdeb = '';
+
     $tableau = "<table border=\"1\"><tr><th>Nouveau tableau</th></tr><tr><td>Première ligne</td></tr></table>";
     $html = htmlEditionTableaux(0, $tableau);
     echo "<p>json = ".print_r($json, true)."</p>";
