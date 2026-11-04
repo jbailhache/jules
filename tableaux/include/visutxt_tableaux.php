@@ -57,6 +57,7 @@
             licenseKey: 'non-commercial-and-evaluation' // Pour usage non commercial
         });
 	*/
+
         let headers = data[0];
         agrandissement = <?php echo $agrandissement; ?>;
         let columns = headers.map((header, index) => ({ 
@@ -70,6 +71,7 @@
             width: htmlColWidths[index] * agrandissement || 250, 
             wordWrap: true, 
         }));
+
         /*
         // === Récupération des largeurs depuis le HTML ===
         // Adapter le sélecteur à la table HTML d’origine
@@ -108,6 +110,7 @@
 
         // Tableaux : Titres des colonnes traités comme des cellules ordinaires
         let data1 = data;
+
         // Conversion du format Handsontable -> Jspreadsheet
         function convertMergeCellsToJSS(mergeCells) {
             const result = {};
@@ -136,6 +139,7 @@
         // alert(JSON.stringify(mergeCells));
 
         const mergeCellsJSS = convertMergeCellsToJSS(mergeCells);
+
 	// const mergeCellsJSS = { A1: [1, 2], A3: [1, 2] };
 
         // helper: convert column index -> Excel-like letters
@@ -173,11 +177,11 @@
             return columnWidths;
         }
 
-
         fetch('node_modules/jspreadsheet-ce/resources/lang/fr_FR.json')
         .then(response => response.json())
         .then(fr => {
         // jspreadsheet.setLocale(fr);          
+
         const hot = jspreadsheet(container, {
             data: data1,
             columns: columns,
@@ -547,7 +551,7 @@
                 return itemsArr;
             }*/
         });
-    
+
         for (row=0; row<attributes.length; row++) {
             for (col=0; col<attributes[row].length; col++) {
 
