@@ -296,7 +296,7 @@ function htmlEditionTableaux($index, $htmlTable) {
     <button class="save-button" id="save-button-' . $index . '">Enregistrer sur le serveur</button>
     <div id="html-output"></div>
     ';
-  
+    echo "<p>json = ".print_r($json, true)."</p>"; 
     return $output;
 
 }
