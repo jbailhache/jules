@@ -41,23 +41,6 @@
         // Initialisation du tableau Handsontable
         const container = document.getElementById('table-container-'+index);
 
-	/*
-        const hot = new Handsontable(container, {
-            data: data,
-            mergeCells: mergeCells,
-            colHeaders: false,
-            rowHeaders: false,
-            autoColumnSize: {
-                    samplingRatio: 10, // Augmenter la précision pour les colonnes longues
-                    useHeaders: false // Ne pas utiliser les en-têtes pour le calcul
-                }, // Ajuster la largeur des colonnes au contenu
-            wordWrap: true,
-            autoRowSize: true, 
-            contextMenu: true, // Menu contextuel pour fusionner/défusionner
-            licenseKey: 'non-commercial-and-evaluation' // Pour usage non commercial
-        });
-	*/
-
         let headers = data[0];
         agrandissement = <?php echo $agrandissement; ?>;
         let columns = headers.map((header, index) => ({ 
@@ -71,42 +54,6 @@
             width: htmlColWidths[index] * agrandissement || 250, 
             wordWrap: true, 
         }));
-
-        /*
-        // === Récupération des largeurs depuis le HTML ===
-        // Adapter le sélecteur à la table HTML d’origine
-        const htmlWidths = getColumnWidthsFromHtml(container); 
-        // ou document.querySelector('table.ma-classe') etc.
-        // console.log('Largeurs des colonnes : ', htmlWidths);
-        // alert('Largeurs des colonnes : ' + htmlWidths.join(', '));
-        
-        // Construction des colonnes avec les largeurs récupérées
-        const columns = [];
-        const nbCols = data[0] ? data[0].length : 0;
-
-        for (let i = 0; i < nbCols; i++) {
-            columns.push({
-                type: 'text',               // ou le type utilisé
-                width: htmlWidths[i] || 250 // fallback à 250 si on n’a pas de largeur
-                // on peut aussi ajouter title, align, etc.
-            });
-        }
-        */
-
-        /*
-        // Construction des colonnes avec les largeurs
-        const columns = [];
-        const nbCols = data[0] ? data[0].length : 0;
-        for (let i = 0; i < nbCols; i++) {
-            columns.push({
-                type: 'text',                    // adaptez selon votre code
-                width: colWidths[i] || 250
-            });
-        }
-        */
-
-        // Tableaux : Titres des colonnes mis en en-tête du tableau
-        // let data1 = data.slice(1);
 
         // Tableaux : Titres des colonnes traités comme des cellules ordinaires
         let data1 = data;
@@ -136,11 +83,7 @@
             return result;
         }
 
-        // alert(JSON.stringify(mergeCells));
-
         const mergeCellsJSS = convertMergeCellsToJSS(mergeCells);
-
-	// const mergeCellsJSS = { A1: [1, 2], A3: [1, 2] };
 
         // helper: convert column index -> Excel-like letters
         function colToLetter(col) {
@@ -191,16 +134,6 @@
             //     'A1:Z1000': 'font-size: 6px;'
             // },
             contextMenu: function(obj, x, y, e) {
-                 /*
-                 let menu = obj.contextMenu(obj, x, y, e);
-                 menu.push({
-                    title: 'Aligner à gauche',
-                    onclick: function() {
-                        obj.setStyle(x, y, 'text-align', 'left');
-                    }
-                 });
-                 return menu;
-                 */
 
                  var items = [];
         
@@ -425,14 +358,7 @@
                          }
                      });
                  }
-       
-		 // items.push({
-                 //    title: jSuites.translate('Execute one action'),
-                 //    onclick: function() {
-                 //        alert('test')
-                 //    }
-                 // });
-                 
+                        
                  items.push({
                      title: 'Fusionner les cellules',
                      onclick: function() {
@@ -538,18 +464,6 @@
                  return items;
              }
 
-            /*contextMenu: function(o, x, y, e, items, section) {
-                let itemsArr = [];
-                // let jss = jspreadsheet(container, { data: data1, columns: columns, });
-                // let itemsArr = jss.contextMenu(o, x, y, e, items, section);
-		itemsArr.push({
-                    title: jSuites.translate('Execute one action'),
-                    onclick: function() {
-                        alert('test')
-                    }
-                });
-                return itemsArr;
-            }*/
         });
 
         for (row=0; row<attributes.length; row++) {
@@ -591,26 +505,10 @@
         }
 
         // hot.hideIndex(); 
-	// alert(JSON.stringify(hot));
 
         // Après initialisation : supprime l’élément DOM de row headers
         document.querySelectorAll('.jsrowheader').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.jspreadsheets').forEach(el => el.style.marginLeft = '0');
-
-        // Enregistrer les données sur le serveur
-        // document.getElementById('save-button').addEventListener('click', () => {
-        //     const data = hot.getData();
-        //     const mergeCells = hot.getPlugin('mergeCells').mergedCellsCollection.mergedCells;
-
-        //     fetch('save_table.php', {
-        //         method: 'POST',
-        //         headers: { 'Content-Type': 'application/json' },
-        //         body: JSON.stringify({ data, mergeCells })
-        //     })
-        //     .then(response => response.json())
-        //     .then(result => alert(result.message))
-        //     .catch(error => alert('Erreur lors de l\'enregistrement : ' + error));
-        // });
 
         // Enregistrer les données sur le serveur
 
@@ -701,32 +599,6 @@
             // Récupérer les dimensions du tableau
             let rows = data1.length;
             let cols = Math.max(...data1.map(row => row.length));
-            // alert("rows="+rows+" cols="+cols);
-
-//            // Parcourir chaque cellule pour récupérer les styles et commentaires
-//            let styles = [];
-//            // let comments = [];
-//            for (let y = 0; y < rows; y++) {
-//                console.log("y = "+y);
-//                styles[y] = [];
-//                // comments[y] = [];
-//                for (let x = 0; x < cols; x++) {
-//                    console.log("x = "+x);
-//                    // Récupérer le style de la cellule (x, y)
-//                    try {
-//                        let style = hot.getStyle(x, y);
-//                        styles[y][x] = style;
-//                    } catch(e) {
-//                    }
-//                    // Récupérer les commentaires de la cellule (x, y)
-//                    // let comment = hot.getComments(x, y);
-//                    // comments[y][x] = comment;
-//                }
-//            }
-
-            // alert(styles);
-
-//            console.log("styles = "+JSON.stringify(styles[0]));
 
             let styles = hot.getStyle();
             console.log("styles = "+JSON.stringify(styles));
@@ -794,28 +666,6 @@
 
         }); // fetch('node_modules/jspreadsheet-ce/resources/lang/fr_FR.json')
         
-        // Charger les données avec async/await
-        // (async () => {
-        //     try {
-        //         const response = await fetch('load_table.php', {
-        //             headers: { 'Accept': 'application/json; charset=UTF-8' }
-        //         });
-        //         if (!response.ok) {
-        //             throw new Error(`Erreur HTTP : ${response.status}`);
-        //         }
-        //         const text = await response.text();
-        //         const result = JSON.parse(text);
-        //         if (result.message) {
-        //             throw new Error(result.message);
-        //         }
-        //         console.log('Données chargées :', result);
-        //         const data = result.data;
-        //         const mergeCells = result.mergeCells;
-        //         initializeTable(data, mergeCells);
-        //     } catch (error) {
-        //         alert('Erreur lors du chargement du tableau : ' + error);
-        //     }
-        // })();
       }
 <?php
       for ($index=0; $index<count($json); $index++) {
