@@ -52,6 +52,7 @@ function getColumnTextsFromDom(DOMElement $table, int $colIndex): array
 
 
 function htmlEditionTableaux($index, $htmlTable) {
+    echo "<p>htmlEditionTableaux index=$index htmlTable=$htmlTable</p>";
     global $json;
 
     if (preg_match ('#^(.*?)<table.*?</table>(.*)$#is', $htmlTable, $matches)) {
@@ -60,6 +61,7 @@ function htmlEditionTableaux($index, $htmlTable) {
     }
 
     $htmlTable = htmlToCustomTags($htmlTable);
+    echo "<p>(1) htmlTable = $htmlTable</p>";
 
     libxml_use_internal_errors(true);
     $doc = new DOMDocument();
@@ -67,6 +69,7 @@ function htmlEditionTableaux($index, $htmlTable) {
     libxml_clear_errors();
     
     $tables = $doc->getElementsByTagName('table');
+    echo "<p>tables = ".print_r($tables, true)."</p>";
     if ($tables->length === 0) {
         http_response_code(500);
         echo json_encode(['message' => 'Aucun tableau trouvé dans le HTML', 'code' => 500], JSON_UNESCAPED_UNICODE);
@@ -74,8 +77,9 @@ function htmlEditionTableaux($index, $htmlTable) {
     }
     
     $table = $tables->item(0);
-
+    echo "<p>table = ".print_r($table, true)."</p>";
     $rows = $table->getElementsByTagName('tr');
+    echo "<p>rows = ".print_r($rows, true)."</p>";
     $data = [];
     $mergeCells = [];
     $attributes = [];
@@ -90,6 +94,7 @@ function htmlEditionTableaux($index, $htmlTable) {
         if ($cells->length === 0) {
             $cells = $firstRow->getElementsByTagName('td');
         } 
+        echo "<p>cells = ".print_r($cells, true)."</p>";
         foreach ($cells as $cell) {
             $width = null;    
             // 1. Attribut width="..."
@@ -106,9 +111,9 @@ function htmlEditionTableaux($index, $htmlTable) {
             $colWidths[] = $width ?: null;
         }
     }
-
+    echo "<p>colWidths = ".print_r($colWidths, true)."</p>";
     $nbCols = count($colWidths);
-
+    echo "<p>nbCols = $nbCols</p>";
     // 2. Estimation uniquement pour les colonnes sans largeur explicite
 
     for ($col = 0; $col < $nbCols; $col++) {
