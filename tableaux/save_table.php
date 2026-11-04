@@ -5,11 +5,13 @@ include_once('include/fonction.php');
 
 header('Content-Type: application/json; charset=UTF-8');
 
-// if (!$input || !isset($input['data']) || !isset($input['mergeCells']) || !isset($input['tableIndex'])) {
-//     http_response_code(400);
-//     echo json_encode(['message' => 'Données invalides', 'code' => 400], JSON_UNESCAPED_UNICODE);
-//     exit;
-// }
+$input = json_decode(file_get_contents('php://input'), true);
+
+if (!$input || !isset($input['data']) || !isset($input['mergeCells']) || !isset($input['tableIndex'])) {
+    http_response_code(400);
+    echo json_encode(['message' => 'Données invalides', 'code' => 400], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
 // Récupération des paramètres
 $tableIndex = $input['tableIndex'];
@@ -30,6 +32,9 @@ $agrandissement = $input['agrandissement'];
 // $tableWidth = array_sum($colWidths) / $agrandissement + 4 * count($colWidths);
 
 require_once("include/save_table_html.php");
+
+$filename = "tableau.html";
+file_put_contents($filename, $html);
 
 // Retour du résultat
 echo json_encode(['message' => "Tableau " . $tableIndex+1 . " enregistré avec succès"], JSON_UNESCAPED_UNICODE);
