@@ -68,8 +68,6 @@ foreach ($data as $rowIndex => $row) {
 
     $html .= '  <tr>' . "\n";
     foreach ($row as $colIndex => $cell) {
-        // echo " ($rowIndex,$colIndex):$cell ";
-        // echo " row:$rowIndex col:$colIndex ";
         $cellStyle = $styles[$rowIndex][$colIndex];
         $correctif = "overflow: hidden;";
         if (!strpos($cellStyle, $correctif)) {
@@ -88,22 +86,6 @@ foreach ($data as $rowIndex => $row) {
         }
 
         $cellAttributes = '';
-        // Ajouter tous les attributs sauf rowspan/colspan (gérés par mergeCells)
-        /*foreach ($attributes[$rowIndex][$colIndex] as $attrName => $attrValue) {
-            if ($attrName !== 'rowspan' && $attrName !== 'colspan') {
-                $cellAttributes .= ' ' . htmlspecialchars($attrName) . '="' . htmlspecialchars($attrValue) . '"';
-            }
-        }*/
-        /*if ($rowIndex == 0) {
-            $rowIndex1 = 0;
-        } else {
-            $rowIndex1 = 1;
-        }
-        if ($colIndex == 0) {
-            $colIndex1 = 0;
-        } else {
-            $colIndex1 = 1;
-        }*/
         $rowIndex1 = $rowIndex - 1;
         $colIndex1 = $colIndex;
         // echo " attributes=<pre>".print_r($attributes,true); exit();
@@ -124,8 +106,6 @@ foreach ($data as $rowIndex => $row) {
             }
         }
 
-        // echo " initialement cellAttributes='$cellAttributes' "; 
-
         // Enlever le style
         $cellAttributes = preg_replace('/style="[^"]*"\s*/', '', $cellAttributes);
 
@@ -133,8 +113,6 @@ foreach ($data as $rowIndex => $row) {
         $cellAttributes = preg_replace('/\s*width="[^"]*\s*"/', '', $cellAttributes);
 
         $escapedCell = customTagsToHtml($cell);
-
-        // echo " cellStyle='$cellStyle' cellAttributes='$cellAttributes' "; 
 
         if ($rowNum == 1) {
         } elseif ($rowNum == 2) { // Tableaux : Titres des colonnes traités comme des cellules ordinaires
@@ -144,7 +122,6 @@ foreach ($data as $rowIndex => $row) {
             // $html .= '    <td' . $cellAttributes . '>' . $escapedCell . '</td>' . "\n";
             $html .= '    <td style="' . $cellStyle . '" ' . $cellAttributes . '>' . $escapedCell . '</td>' . "\n";
         }
-        // echo " html='$html' "; exit();
     }
     $html .= '  </tr>' . "\n";
 }
