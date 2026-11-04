@@ -1,6 +1,5 @@
 <?php
 
-include_once('include/verbatim.php');
 include_once('include/fonction.php');
 
 header('Content-Type: application/json; charset=UTF-8');
