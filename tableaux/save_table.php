@@ -22,6 +22,7 @@ $data = $input['data'];
 $attributes = $input['attributes'];
 $stylesArray = $input['stylesArray'];
 $colWidths = $input['colWidths'];
+$mergeCells = $input['mergeCells'] ?? [];
 $sannee = $input['annee'];
 $art = $input['art'];
 $sdocdeb = $input['doc'];

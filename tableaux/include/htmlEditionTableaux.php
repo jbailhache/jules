@@ -125,61 +125,93 @@ function htmlEditionTableaux($index, $htmlTable) {
         }
     }
 
-    $maxCols = 0;
-    foreach ($rows as $row) {
-        $cells = $row->getElementsByTagName('td');
-        $thCells = $row->getElementsByTagName('th');
-        $rowCells = [];
-        foreach ($thCells as $cell) {
-            $rowCells[] = $cell;
+    // Helper pour convertir index colonne -> lettres (ex: 0 -> A, 1 -> B, ...)
+    $colToLetterFunc = function(int $col): string {
+        $s = '';
+        while ($col >= 0) {
+            $s = chr(65 + ($col % 26)) . $s;
+            $col = (int)($col / 26) - 1;
         }
-        foreach ($cells as $cell) {
-            $rowCells[] = $cell;
-        }
-        $maxCols = max($maxCols, count($rowCells));
-    }
+        return $s;
+    };
 
-    // Initialiser la grille de données
-    foreach ($rows as $rowIndex => $row) {
-        $data[$rowIndex] = array_fill(0, $maxCols, null);
-        $attributes[$rowIndex] = array_fill(0, $maxCols, []);
-    }
+    $mergeCells = [];
+    $data = [];
+    $attributes = [];
 
-    foreach ($rows as $rowIndex => $row) {
-        $cells = $row->getElementsByTagName('td');
-        $thCells = $row->getElementsByTagName('th');
-        $rowCells = [];
-        foreach ($thCells as $cell) {
-            $rowCells[] = $cell;
-        }
-        foreach ($cells as $cell) {
-            $rowCells[] = $cell;
-        }
+    // Détermination de la grille et des fusions
+    for ($rowIndex = 0; $rowIndex < $rows->length; $rowIndex++) {
+        $row = $rows->item($rowIndex);
+        $colIndex = 0;
 
-        $cellIndex = 0;
-        foreach ($rowCells as $cell) {
-            if ($cellIndex >= $maxCols) break;
+        foreach ($row->childNodes as $node) {
+            if ($node->nodeName !== 'th' && $node->nodeName !== 'td') {
+                continue;
+            }
+
+            // Avancer jusqu'à la prochaine cellule non occupée par un rowspan/colspan précédent
+            while (isset($data[$rowIndex][$colIndex])) {
+                $colIndex++;
+            }
+
+            $colspan = $node->hasAttribute('colspan') ? max(1, (int)$node->getAttribute('colspan')) : 1;
+            $rowspan = $node->hasAttribute('rowspan') ? max(1, (int)$node->getAttribute('rowspan')) : 1;
 
             // Extraire le texte
-            $text = trim(preg_replace('/\s+/', ' ', $cell->nodeValue));
+            $text = trim(preg_replace('/\s+/', ' ', $node->nodeValue));
             $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            $data[$rowIndex][$cellIndex] = $text;
+            $data[$rowIndex][$colIndex] = $text;
 
             // Capturer tous les attributs
             $cellAttributes = [];
-            foreach ($cell->attributes as $attr) {
+            foreach ($node->attributes as $attr) {
                 $cellAttributes[$attr->name] = $attr->value;
             }
-            $attributes[$rowIndex][$cellIndex] = $cellAttributes;
+            $attributes[$rowIndex][$colIndex] = $cellAttributes;
 
-            $cellIndex += 1;
+            if ($colspan > 1 || $rowspan > 1) {
+                $cellRef = $colToLetterFunc($colIndex) . ($rowIndex + 1);
+                $mergeCells[$cellRef] = [$colspan, $rowspan];
+
+                for ($dr = 0; $dr < $rowspan; $dr++) {
+                    for ($dc = 0; $dc < $colspan; $dc++) {
+                        if ($dr > 0 || $dc > 0) {
+                            $data[$rowIndex + $dr][$colIndex + $dc] = '';
+                            $attributes[$rowIndex + $dr][$colIndex + $dc] = [];
+                        }
+                    }
+                }
+            }
+
+            $colIndex += $colspan;
         }
+    }
+
+    // Normaliser la grille (remplir les trous éventuels et aligner le nombre de colonnes)
+    $maxCols = $nbCols;
+    foreach ($data as $rowIndex => $rowCells) {
+        $maxCols = max($maxCols, count($rowCells));
+    }
+    for ($rowIndex = 0; $rowIndex < $rows->length; $rowIndex++) {
+        for ($colIndex = 0; $colIndex < $maxCols; $colIndex++) {
+            if (!isset($data[$rowIndex][$colIndex])) {
+                $data[$rowIndex][$colIndex] = null;
+            }
+            if (!isset($attributes[$rowIndex][$colIndex])) {
+                $attributes[$rowIndex][$colIndex] = [];
+            }
+        }
+        ksort($data[$rowIndex]);
+        ksort($attributes[$rowIndex]);
+        $data[$rowIndex] = array_values($data[$rowIndex]);
+        $attributes[$rowIndex] = array_values($attributes[$rowIndex]);
     }
 
     $json[$index] =  json_encode([
         'data' => $data,
         'attributes' => $attributes,
         'colWidths' => $colWidths,
+        'mergeCells' => $mergeCells,
         // 'htmlTable' => $htmlTable,
     ], JSON_UNESCAPED_UNICODE);
 

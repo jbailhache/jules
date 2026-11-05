@@ -30,6 +30,7 @@
         const data = result.data;
         const attributes = result.attributes;
         const htmlColWidths = result.colWidths || [];
+        const initMergeCells = result.mergeCells || {};
 
         // Initialisation du tableau Handsontable
         const container = document.getElementById('table-container-'+index);
@@ -88,6 +89,7 @@
             data: data1,
             columns: columns,
             text: fr,
+            mergeCells: initMergeCells,
             // style: {
             //     'A1:Z1000': 'font-size: 6px;'
             // },
@@ -612,6 +614,8 @@
                 });
             }
 
+            const mergeCells = hot.getMerge() || {};
+
             const payload = {
                 tableIndex: index,
                 titre: titre,
@@ -620,6 +624,7 @@
                 attributes: attributes,
                 stylesArray: stylesArray,
                 colWidths: colWidths,
+                mergeCells: mergeCells,
                 agrandissement: <?php echo $agrandissement; ?>,
                 annee: <?php echo $sannee; ?>,
                 art: '<?php echo $sartdeb; ?>',
