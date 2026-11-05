@@ -6,7 +6,7 @@ header('Content-Type: application/json; charset=UTF-8');
 
 $input = json_decode(file_get_contents('php://input'), true);
 
-if (!$input || !isset($input['data']) || !isset($input['mergeCells']) || !isset($input['tableIndex'])) {
+if (!$input || !isset($input['data']) || !isset($input['tableIndex'])) {
     http_response_code(400);
     echo json_encode(['message' => 'Données invalides', 'code' => 400], JSON_UNESCAPED_UNICODE);
     exit;
@@ -19,7 +19,6 @@ $note = $input['note'];
 $alignementTitre = $input["alignementTitre"];
 $alignementNote = $input["alignementNote"];
 $data = $input['data'];
-// $mergeCells = $input['mergeCells'];
 $attributes = $input['attributes'];
 $stylesArray = $input['stylesArray'];
 $colWidths = $input['colWidths'];
