@@ -1,0 +1,115 @@
+<?php
+
+$styles = [];
+foreach ($data as $rowIndex => $row) {
+    $styles[$rowIndex] = array_fill(0, count($row), false);
+}
+
+foreach ($stylesArray as $item) {
+    $row = $item['row'];
+    $col = $item['col'];
+    $style = $item['style'];
+    $styles[$row][$col] = $style;
+}
+
+if($alignementTitre == 'G'){
+
+    $pDeb = '<p style="width: ' . $tableWidth . 'px; text-align: left;">';
+    $pFin = '</p>';
+
+} else if($alignementTitre == 'D'){
+
+    $pDeb = '<p style="width: ' . $tableWidth . 'px; text-align: right;">';
+    $pFin = '</p>';
+
+} else if($alignementTitre == 'C'){
+
+    $pDeb = '<p style="width: ' . $tableWidth . 'px; text-align: center;">';
+    $pFin = '</p>';
+
+} else {
+
+    $pDeb = '<p>';
+    $pFin = '</p>';
+}
+
+$escapedTitre = customTagsToHtml($titre);
+$html = $pDeb.$escapedTitre.$pFin . '<table border="1">' . "\n";
+$rowNum = 0;
+foreach ($data as $rowIndex => $row) {
+
+    $rowNum++;
+
+    // Tableaux : Titres des colonnes traités comme des cellules ordinaires
+    if ($rowNum == 1) {
+        continue;
+    }
+
+    $html .= '  <tr>' . "\n";
+    foreach ($row as $colIndex => $cell) {
+        $cellStyle = $styles[$rowIndex][$colIndex];
+        $correctif = "overflow: hidden;";
+        if (!strpos($cellStyle, $correctif)) {
+            $cellStyle .= " $correctif";
+        }
+        $correctif = "padding-right: 1px;";
+        if (!strpos($cellStyle, $correctif)) {
+            $cellStyle .= " $correctif";
+        }
+
+        $cellAttributes = '';
+        $rowIndex1 = $rowIndex - 1;
+        $colIndex1 = $colIndex;
+        if (is_array($attributes)
+            && array_key_exists($rowIndex1, $attributes) && is_array($attributes[$rowIndex1])
+            && array_key_exists($colIndex1, $attributes[$rowIndex1]) && is_array($attributes[$rowIndex1][$colIndex1])) {
+            foreach ($attributes[$rowIndex1][$colIndex1] as $attrName => $attrValue) {
+                if ($attrName !== 'rowspan' && $attrName !== 'colspan') {
+                    $cellAttributes .= ' ' . htmlspecialchars($attrName) . '="' . htmlspecialchars($attrValue) . '"';
+                }
+            }
+        }
+
+        // Enlever le style
+        $cellAttributes = preg_replace('/style="[^"]*"\s*/', '', $cellAttributes);
+
+        // Enlever width
+        $cellAttributes = preg_replace('/\s*width="[^"]*\s*"/', '', $cellAttributes);
+
+        $escapedCell = customTagsToHtml($cell);
+
+        if ($rowNum == 1) {
+        } elseif ($rowNum == 2) { // Tableaux : Titres des colonnes traités comme des cellules ordinaires
+            // $html .= '    <th style="' . $cellStyle . '" ' . $cellAttributes . '>' . $escapedCell . '</th>' . "\n";
+            $html .= '    <th style="' . $cellStyle . '" ' . $cellAttributes . ' width="' . $colWidths[$colIndex] / $agrandissement . '">' . $escapedCell . '</th>' . "\n";
+        } else {
+            // $html .= '    <td' . $cellAttributes . '>' . $escapedCell . '</td>' . "\n";
+            $html .= '    <td style="' . $cellStyle . '" ' . $cellAttributes . '>' . $escapedCell . '</td>' . "\n";
+        }
+    }
+    $html .= '  </tr>' . "\n";
+}
+
+if($alignementNote == 'G'){
+
+    $pDeb = '<p style="width: ' . $tableWidth . 'px; text-align: left;">';
+    $pFin = '</p>';
+
+} else if($alignementNote == 'D'){
+
+    $pDeb = '<p style="width: ' . $tableWidth . 'px; text-align: right;">';
+    $pFin = '</p>';
+
+} else if($alignementNote == 'C'){
+
+    $pDeb = '<p style="width: ' . $tableWidth . 'px; text-align: center;">';
+    $pFin = '</p>';
+
+} else {
+
+    $pDeb = '<p>';
+    $pFin = '</p>';
+}
+
+$escapedNote = customTagsToHtml($note);
+$html .= '</table>' . $pDeb.$escapedNote.$pFin;
