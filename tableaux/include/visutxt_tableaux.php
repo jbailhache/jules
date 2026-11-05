@@ -550,6 +550,21 @@
         document.querySelectorAll('.jsrowheader').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.jspreadsheets').forEach(el => el.style.marginLeft = '0');
 
+        // Empêcher la modification de largeur d'autres colonnes lors du redimensionnement d'une seule colonne
+        if (hot && hot.table) {
+            const thead = hot.table.querySelector('thead');
+            if (thead) {
+                thead.addEventListener('mousedown', function(e) {
+                    if (e.target && e.target.getAttribute('data-x') !== null) {
+                        const rect = e.target.getBoundingClientRect();
+                        if (rect.width - e.offsetX < 6) {
+                            hot.headers.forEach(h => h.classList.remove('selected'));
+                        }
+                    }
+                }, true);
+            }
+        }
+
         // Enregistrer les données sur le serveur
 
         document.getElementById('save-button-'+index).addEventListener('click', save_tables);
