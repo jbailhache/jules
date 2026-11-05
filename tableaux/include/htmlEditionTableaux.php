@@ -83,10 +83,11 @@ function htmlEditionTableaux($index, $htmlTable) {
     $colWidths = [];
     if ($rows->length > 0) {
         $firstRow = $rows->item(0);
-        $cells = $firstRow->getElementsByTagName('th');
-        // $nbCols = $cells->length;
-        if ($cells->length === 0) {
-            $cells = $firstRow->getElementsByTagName('td');
+        $cells = [];
+        foreach ($firstRow->childNodes as $node) {
+            if ($node->nodeName === 'th' || $node->nodeName === 'td') {
+                $cells[] = $node;
+            }
         }
         foreach ($cells as $cell) {
             $width = null;
@@ -100,8 +101,21 @@ function htmlEditionTableaux($index, $htmlTable) {
                     $width = (int) $matches[1];
                 }
             }
-            // Fallback
-            $colWidths[] = $width ?: null;
+            $colspan = $cell->hasAttribute('colspan') ? max(1, (int)$cell->getAttribute('colspan')) : 1;
+            if ($colspan > 1) {
+                if ($width !== null) {
+                    $distributed = (int)round($width / $colspan);
+                    for ($c = 0; $c < $colspan; $c++) {
+                        $colWidths[] = $distributed;
+                    }
+                } else {
+                    for ($c = 0; $c < $colspan; $c++) {
+                        $colWidths[] = null;
+                    }
+                }
+            } else {
+                $colWidths[] = $width ?: null;
+            }
         }
     }
 

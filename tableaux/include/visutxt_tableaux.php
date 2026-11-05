@@ -566,8 +566,8 @@
 
             var titre = document.querySelector('.textecourant #titre').value;
             var note = document.querySelector('.textecourant #note').value;
-            var alignementTitre = document.querySelector('#alignement_titre').value;
-            var alignementNote = document.querySelector('#alignement_Note').value;
+            var alignementTitre = document.querySelector('#alignement_titre') ? document.querySelector('#alignement_titre').value : '';
+            var alignementNote = (document.querySelector('#alignement_note') || document.querySelector('#alignement_Note')) ? (document.querySelector('#alignement_note') || document.querySelector('#alignement_Note')).value : '';
 
 
             // const data = hot.getData();

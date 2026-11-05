@@ -119,8 +119,10 @@ foreach ($data as $rowIndex => $row) {
         $cellAttributes = preg_replace('/\s*width="[^"]*\s*"/', '', $cellAttributes);
 
         // Ajouter colspan / rowspan si cellule ancre d'une fusion
+        $cellColspan = 1;
         if (isset($mergedAnchors[$rowIndex][$colIndex])) {
             $mergeDim = $mergedAnchors[$rowIndex][$colIndex];
+            $cellColspan = $mergeDim[0];
             if ($mergeDim[0] > 1) {
                 $cellAttributes .= ' colspan="' . $mergeDim[0] . '"';
             }
@@ -133,7 +135,13 @@ foreach ($data as $rowIndex => $row) {
 
         if ($rowNum == 1) {
         } elseif ($rowNum == 2) { // Tableaux : Titres des colonnes traités comme des cellules ordinaires
-            $html .= '    <th style="' . $cellStyle . '" ' . $cellAttributes . ' width="' . $colWidths[$colIndex] / $agrandissement . '">' . $escapedCell . '</th>' . "\n";
+            $thWidth = 0;
+            for ($c = 0; $c < $cellColspan; $c++) {
+                if (isset($colWidths[$colIndex + $c])) {
+                    $thWidth += $colWidths[$colIndex + $c];
+                }
+            }
+            $html .= '    <th style="' . $cellStyle . '" ' . $cellAttributes . ' width="' . $thWidth / $agrandissement . '">' . $escapedCell . '</th>' . "\n";
         } else {
             $html .= '    <td style="' . $cellStyle . '" ' . $cellAttributes . '>' . $escapedCell . '</td>' . "\n";
         }
