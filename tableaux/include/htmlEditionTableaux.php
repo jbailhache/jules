@@ -79,50 +79,89 @@ function htmlEditionTableaux($index, $htmlTable) {
     $data = [];
     $attributes = [];
 
-    // Récupération des largeurs des colonnes
+    // Récupération des largeurs des colonnes en examinant toutes les lignes
     $colWidths = [];
-    if ($rows->length > 0) {
-        $firstRow = $rows->item(0);
-        $cells = [];
-        foreach ($firstRow->childNodes as $node) {
-            if ($node->nodeName === 'th' || $node->nodeName === 'td') {
-                $cells[] = $node;
+    $gridOccupied = [];
+    $totalCols = 0;
+
+    for ($rowIndex = 0; $rowIndex < $rows->length; $rowIndex++) {
+        $row = $rows->item($rowIndex);
+        $colIndex = 0;
+
+        foreach ($row->childNodes as $node) {
+            if ($node->nodeName !== 'th' && $node->nodeName !== 'td') {
+                continue;
             }
-        }
-        foreach ($cells as $cell) {
+
+            while (isset($gridOccupied[$rowIndex][$colIndex])) {
+                $colIndex++;
+            }
+
+            $colspan = $node->hasAttribute('colspan') ? max(1, (int)$node->getAttribute('colspan')) : 1;
+            $rowspan = $node->hasAttribute('rowspan') ? max(1, (int)$node->getAttribute('rowspan')) : 1;
+
+            for ($dr = 0; $dr < $rowspan; $dr++) {
+                for ($dc = 0; $dc < $colspan; $dc++) {
+                    $gridOccupied[$rowIndex + $dr][$colIndex + $dc] = true;
+                }
+            }
+
             $width = null;
-            // 1. Attribut width="..."
-            if ($cell->hasAttribute('width')) {
-                $width = (int) $cell->getAttribute('width');
-            }
-            // 2. Style inline style="width: ..."
-            if (!$width && $cell->hasAttribute('style')) {
-                if (preg_match('/width\s*:\s*(\d+)px?/i', $cell->getAttribute('style'), $matches)) {
-                    $width = (int) $matches[1];
+            if ($node->hasAttribute('width')) {
+                $width = (int)$node->getAttribute('width');
+            } elseif ($node->hasAttribute('style')) {
+                if (preg_match('/width\s*:\s*(\d+)px?/i', $node->getAttribute('style'), $matches)) {
+                    $width = (int)$matches[1];
                 }
             }
-            $colspan = $cell->hasAttribute('colspan') ? max(1, (int)$cell->getAttribute('colspan')) : 1;
-            if ($colspan > 1) {
-                if ($width !== null) {
-                    $distributed = (int)round($width / $colspan);
-                    for ($c = 0; $c < $colspan; $c++) {
-                        $colWidths[] = $distributed;
-                    }
-                } else {
-                    for ($c = 0; $c < $colspan; $c++) {
-                        $colWidths[] = null;
-                    }
-                }
-            } else {
-                $colWidths[] = $width ?: null;
+
+            // Si la cellule n'est pas fusionnée horizontalement (colspan == 1), elle donne la largeur exacte de la colonne
+            if ($colspan === 1 && $width !== null && !isset($colWidths[$colIndex])) {
+                $colWidths[$colIndex] = $width;
             }
+
+            $colIndex += $colspan;
+            $totalCols = max($totalCols, $colIndex);
         }
     }
 
-    $nbCols = count($colWidths);
+    // Deuxième passe pour les colonnes qui n'auraient une largeur définie que dans une cellule fusionnée
+    for ($rowIndex = 0; $rowIndex < $rows->length; $rowIndex++) {
+        $row = $rows->item($rowIndex);
+        $colIndex = 0;
+
+        foreach ($row->childNodes as $node) {
+            if ($node->nodeName !== 'th' && $node->nodeName !== 'td') {
+                continue;
+            }
+
+            // Repositionnement selon $gridOccupied
+            $colspan = $node->hasAttribute('colspan') ? max(1, (int)$node->getAttribute('colspan')) : 1;
+            $width = null;
+            if ($node->hasAttribute('width')) {
+                $width = (int)$node->getAttribute('width');
+            } elseif ($node->hasAttribute('style')) {
+                if (preg_match('/width\s*:\s*(\d+)px?/i', $node->getAttribute('style'), $matches)) {
+                    $width = (int)$matches[1];
+                }
+            }
+
+            if ($colspan > 1 && $width !== null) {
+                $distributed = (int)round($width / $colspan);
+                for ($c = 0; $c < $colspan; $c++) {
+                    if (!isset($colWidths[$colIndex + $c])) {
+                        $colWidths[$colIndex + $c] = $distributed;
+                    }
+                }
+            }
+
+            $colIndex += $colspan;
+        }
+    }
+
+    $nbCols = $totalCols;
 
     // 2. Estimation uniquement pour les colonnes sans largeur explicite
-
     for ($col = 0; $col < $nbCols; $col++) {
         if (!empty($colWidths[$col])) {
             continue; // largeur déjà connue
@@ -138,6 +177,8 @@ function htmlEditionTableaux($index, $htmlTable) {
             $colWidths[$col] = 250;
         }
     }
+    ksort($colWidths);
+    $colWidths = array_values($colWidths);
 
     // Helper pour convertir index colonne -> lettres (ex: 0 -> A, 1 -> B, ...)
     $colToLetterFunc = function(int $col): string {

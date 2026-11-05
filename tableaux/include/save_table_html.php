@@ -131,19 +131,21 @@ foreach ($data as $rowIndex => $row) {
             }
         }
 
+        $cellWidth = 0;
+        for ($c = 0; $c < $cellColspan; $c++) {
+            if (isset($colWidths[$colIndex + $c])) {
+                $cellWidth += $colWidths[$colIndex + $c];
+            }
+        }
+        $formattedWidth = $cellWidth / $agrandissement;
+
         $escapedCell = customTagsToHtml($cell);
 
         if ($rowNum == 1) {
         } elseif ($rowNum == 2) { // Tableaux : Titres des colonnes traités comme des cellules ordinaires
-            $thWidth = 0;
-            for ($c = 0; $c < $cellColspan; $c++) {
-                if (isset($colWidths[$colIndex + $c])) {
-                    $thWidth += $colWidths[$colIndex + $c];
-                }
-            }
-            $html .= '    <th style="' . $cellStyle . '" ' . $cellAttributes . ' width="' . $thWidth / $agrandissement . '">' . $escapedCell . '</th>' . "\n";
+            $html .= '    <th style="' . $cellStyle . '" ' . $cellAttributes . ' width="' . $formattedWidth . '">' . $escapedCell . '</th>' . "\n";
         } else {
-            $html .= '    <td style="' . $cellStyle . '" ' . $cellAttributes . '>' . $escapedCell . '</td>' . "\n";
+            $html .= '    <td style="' . $cellStyle . '" ' . $cellAttributes . ' width="' . $formattedWidth . '">' . $escapedCell . '</td>' . "\n";
         }
     }
     $html .= '  </tr>' . "\n";
