@@ -145,7 +145,6 @@ function htmlEditionTableaux($index, $htmlTable) {
     foreach ($rows as $rowIndex => $row) {
         $data[$rowIndex] = array_fill(0, $maxCols, null);
         $attributes[$rowIndex] = array_fill(0, $maxCols, []);
-        $occupied[$rowIndex] = array_fill(0, $maxCols, false);
     }
     
     foreach ($rows as $rowIndex => $row) {
@@ -161,10 +160,6 @@ function htmlEditionTableaux($index, $htmlTable) {
     
         $cellIndex = 0;
         foreach ($rowCells as $cell) {
-            // Trouver la prochaine position non occupée
-            while ($cellIndex < $maxCols && $occupied[$rowIndex][$cellIndex]) {
-                $cellIndex++;
-            }
             if ($cellIndex >= $maxCols) break;
     
             // Extraire le texte
@@ -182,29 +177,8 @@ function htmlEditionTableaux($index, $htmlTable) {
             // Gérer rowspan et colspan
             $rowspan = $cell->hasAttribute('rowspan') ? (int)$cell->getAttribute('rowspan') : 1;
             $colspan = $cell->hasAttribute('colspan') ? (int)$cell->getAttribute('colspan') : 1;
-    
-            if ($rowspan > 1 || $colspan > 1) {
-                $mergeCells[] = [
-                    'row' => $rowIndex,
-                    'col' => $cellIndex,
-                    'rowspan' => $rowspan,
-                    'colspan' => $colspan
-                ];
-            }
-    
-            // Marquer les cellules occupées par rowspan/colspan
-            for ($r = 0; $r < $rowspan; $r++) {
-                for ($c = 0; $c < $colspan; $c++) {
-                    if ($rowIndex + $r < count($rows) && $cellIndex + $c < $maxCols) {
-                        $occupied[$rowIndex + $r][$cellIndex + $c] = true;
-                        if ($r > 0 || $c > 0) {
-                            $data[$rowIndex + $r][$cellIndex + $c] = null;
-                            $attributes[$rowIndex + $r][$cellIndex + $c] = [];
-                        }
-                    }
-                }
-            }
-            $cellIndex += $colspan;
+     
+            $cellIndex += 1;
         }
     }
 
