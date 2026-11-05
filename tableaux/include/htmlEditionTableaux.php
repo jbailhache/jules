@@ -78,7 +78,6 @@ function htmlEditionTableaux($index, $htmlTable) {
     $rows = $table->getElementsByTagName('tr');
     $data = [];
     $attributes = [];
-    $occupied = []; // Tableau pour suivre les cellules occupées par rowspan/colspan
   
     // Récupération des largeurs des colonnes
     $colWidths = [];
