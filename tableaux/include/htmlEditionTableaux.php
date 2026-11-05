@@ -171,11 +171,7 @@ function htmlEditionTableaux($index, $htmlTable) {
                 $cellAttributes[$attr->name] = $attr->value;
             }
             $attributes[$rowIndex][$cellIndex] = $cellAttributes;
- 
-            // Gérer rowspan et colspan
-            $rowspan = $cell->hasAttribute('rowspan') ? (int)$cell->getAttribute('rowspan') : 1;
-            $colspan = $cell->hasAttribute('colspan') ? (int)$cell->getAttribute('colspan') : 1;
-     
+  
             $cellIndex += 1;
         }
     }
