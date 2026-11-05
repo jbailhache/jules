@@ -10,8 +10,12 @@
     $sartdeb = '';
     $sartfin = '';
     $sdocdeb = '';
+    $filename = "tableau.html";
 
-    $tableau = "<table border=\"1\"><tr><th>Nouveau tableau</th></tr><tr><td>Première ligne</td></tr></table>";
+    $tableau = file_get_contents($filename);
+    if (empty($tableau)) {
+        $tableau = "<table border=\"1\"><tr><th>Nouveau tableau</th></tr><tr><td>Première ligne</td></tr></table>";
+    }
     $html = htmlEditionTableaux(0, $tableau);
     echo "<p>json = ".print_r($json, true)."</p>";
 ?>
