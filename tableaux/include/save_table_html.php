@@ -1,26 +1,5 @@
 <?php
 
-// Créer une grille pour suivre les cellules occupées par rowspan/colspan
-$occupied = [];
-foreach ($data as $rowIndex => $row) {
-    $occupied[$rowIndex] = array_fill(0, count($row), false);
-}
-
-// Marquer les cellules occupées par les fusions
-foreach ($mergeCells as $merge) {
-    $row = $merge['row'];
-    $col = $merge['col'];
-    $rowspan = $merge['rowspan'];
-    $colspan = $merge['colspan'];
-    for ($r = 0; $r < $rowspan; $r++) {
-        for ($c = 0; $c < $colspan; $c++) {
-            if ($row + $r < count($data) && $col + $c < count($data[0])) {
-                $occupied[$row + $r][$col + $c] = true;
-            }
-        }
-    }
-}
-
 $styles = [];
 foreach ($data as $rowIndex => $row) {
     $styles[$rowIndex] = array_fill(0, count($row), false);
@@ -58,7 +37,7 @@ $escapedTitre = customTagsToHtml($titre);
 $html = $pDeb.$escapedTitre.$pFin . '<table border="1">' . "\n";
 $rowNum = 0;
 foreach ($data as $rowIndex => $row) {
-    // echo " $rowIndex:".print_r($row,true);
+
     $rowNum++;
     
     // Tableaux : Titres des colonnes traités comme des cellules ordinaires
@@ -78,17 +57,9 @@ foreach ($data as $rowIndex => $row) {
             $cellStyle .= " $correctif";
         }
 
-        // Ignorer les cellules occupées par une fusion (sauf la cellule de départ)
-        // if ($occupied[$rowIndex][$colIndex] && !($cell !== null)) {
-        if ($occupied[$rowIndex][$colIndex] && empty($cell)) {
-            // echo "Cellule occupée"; exit();
-            continue;
-        }
-
         $cellAttributes = '';
         $rowIndex1 = $rowIndex - 1;
         $colIndex1 = $colIndex;
-        // echo " attributes=<pre>".print_r($attributes,true); exit();
         if (is_array($attributes) 
             && array_key_exists($rowIndex1, $attributes) && is_array($attributes[$rowIndex1]) 
             && array_key_exists($colIndex1, $attributes[$rowIndex1]) && is_array($attributes[$rowIndex1][$colIndex1])) {
@@ -96,13 +67,6 @@ foreach ($data as $rowIndex => $row) {
                 if ($attrName !== 'rowspan' && $attrName !== 'colspan') {
                     $cellAttributes .= ' ' . htmlspecialchars($attrName) . '="' . htmlspecialchars($attrValue) . '"';
                 }
-            }
-        }
-        // Ajouter rowspan/colspan depuis mergeCells
-        foreach ($mergeCells as $merge) {
-            if ($merge['row'] === $rowIndex && $merge['col'] === $colIndex) {
-                if ($merge['rowspan'] > 1) $cellAttributes .= ' rowspan="' . $merge['rowspan'] . '"';
-                if ($merge['colspan'] > 1) $cellAttributes .= ' colspan="' . $merge['colspan'] . '"';
             }
         }
 
