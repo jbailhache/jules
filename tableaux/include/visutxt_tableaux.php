@@ -28,7 +28,6 @@
         const json = raw_json.replace(/\r/g, "\\r");
         const result = JSON.parse(json);
         const data = result.data;
-        const mergeCells = result.mergeCells;
         const attributes = result.attributes;
         const htmlColWidths = result.colWidths || [];
 
@@ -46,38 +45,12 @@
             title: '', 
 
             width: htmlColWidths[index] * agrandissement || 250, 
-            wordWrap: true, 
+            wordWrag: true, 
         }));
 
         // Tableaux : Titres des colonnes traités comme des cellules ordinaires
         let data1 = data;
 
-        // Conversion du format Handsontable -> Jspreadsheet
-        function convertMergeCellsToJSS(mergeCells) {
-            const result = {};
-            mergeCells.forEach(m => {
-                // Convertit col index -> lettre(s)
-                let colLetter = '';
-                let col = m.col;
-                while (col >= 0) {
-                    colLetter = String.fromCharCode((col % 26) + 65) + colLetter;
-                    col = Math.floor(col / 26) - 1;
-                }
-
-                // Tableaux : Titres des colonnes mis en en-tête du tableau
-                // const rowNumber = m.row; // Jspreadsheet est basé sur A1, donc ligne = +1
-
-                // Tableaux : Titres des colonnes traités comme des cellules ordinaires
-                const rowNumber = m.row + 1; // Jspreadsheet est basé sur A1, donc ligne = +1
-
-                const cellRef = colLetter + rowNumber;
-
-                result[cellRef] = [ m.colspan, m.rowspan ];
-            });
-            return result;
-        }
-
-        const mergeCellsJSS = convertMergeCellsToJSS(mergeCells);
 
         // helper: convert column index -> Excel-like letters
         function colToLetter(col) {
@@ -122,7 +95,6 @@
         const hot = jspreadsheet(container, {
             data: data1,
             columns: columns,
-            mergeCells: mergeCellsJSS,
             text: fr,
             // style: {
             //     'A1:Z1000': 'font-size: 6px;'
@@ -354,31 +326,6 @@
                  }
                         
                  items.push({
-                     title: 'Fusionner les cellules',
-                     onclick: function() {
-                         var rows = obj.getSelectedRows(true) || [];
-                         var cols = obj.getSelectedColumns(true) || [];
-                         width = cols.length;
-                         height = rows.length;
-                         colLetter = colToLetter(cols[0]);
-                         cellRef = colLetter + (rows[0]+1);
-		         // alert("rows="+rows+" cols="+cols+" width="+width+" height="+height+" cellRef="+cellRef)
-                         obj.setMerge(cellRef, width, height);
-                     }
-                 });
-
-		        items.push({
-                     title: 'Défusionner les cellules',
-                     onclick: function() {
-                         var rows = obj.getSelectedRows(true) || [];
-                         var cols = obj.getSelectedColumns(true) || [];
-                         colLetter = colToLetter(cols[0]);
-                         cellRef = colLetter + (rows[0]+1);
-                         obj.removeMerge(cellRef);
-                     }
-                 });
-
-                 items.push({
                     title: 'Aligner à gauche',
                     onclick: function() {
                          var rows = obj.getSelectedRows(true) || [];
@@ -529,9 +476,6 @@
             const headers = columns.map(c => c.title);
             const data = [headers, ...data1];
 
-            // const mergeCells = hot.getPlugin('mergeCells').mergedCellsCollection.mergedCells;
-            const mergeCellsJSS = hot.getMerge();
-
             const colWidths = getColumnWidths(hot);
 
             // Convertir une référence de cellule type "B3" en indices (0-based)
@@ -552,39 +496,6 @@
               return { col, rowNumber };
             }
             
-            /**
-             * Convertir mergeCells Jspreadsheet -> Handsontable
-             *
-             * @param {Object} mergesJSS ex: { "A1": [2,1], "B3":[1,3] }
-             * @param {Object} opts
-             *     opts.hasHeaderRow: true si on a retiré la ligne d’en-têtes dans JSS (data1 = data.slice(1))
-             * @returns {Array} ex: [{row:0,col:0,rowspan:1,colspan:2}, ...]
-             */
-            function convertJSStoHT(mergesJSS, opts = { hasHeaderRow: true }) {
-              const result = [];
-              const hasHeader = !!opts.hasHeaderRow;
-            
-              for (const ref in mergesJSS) {
-                const [colspan, rowspan] = mergesJSS[ref];
-                const { col, rowNumber } = cellRefToIndices(ref);
-            
-                // rowNumber est en base 1 dans la ref ("A1" = ligne 1 en JSS)
-                // -> si hasHeader = true, HT row = rowNumber
-                // -> sinon, HT row = rowNumber - 1
-                const rowHT = hasHeader ? rowNumber : (rowNumber - 1);
-            
-                result.push({
-                  row: rowHT,
-                  col: col,
-                  rowspan: rowspan,
-                  colspan: colspan
-                });
-              }
-            
-              return result;
-            }
-
-            const mergeCells = convertJSStoHT(mergeCellsJSS);
 
             // Récupérer les dimensions du tableau
             let rows = data1.length;
@@ -604,13 +515,11 @@
                 });
             }
 
-            // const payload = { data: data, mergeCells: mergeCells, tableIndex: index, art: '<?php echo $sartdeb; ?>' };
             const payload = { 
                 tableIndex: index, 
                 titre: titre,
                 note: note,
                 data: data, 
-                mergeCells: mergeCells, 
                 attributes: attributes,
                 stylesArray: stylesArray,
                 colWidths: colWidths,
