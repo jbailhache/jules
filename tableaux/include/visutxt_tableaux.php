@@ -62,14 +62,6 @@
           return s;
         }
 
-        function mergeSelectedCells(spreadsheet) {
-          const selected = spreadsheet.getSelectedCells();
-          if (selected.length < 2) return;
-        
-          const [start, end] = selected;
-          spreadsheet.setMerge(start[0], start[1], end[0] - start[0] + 1, end[1] - start[1] + 1);
-        }
-
         // Fonction pour récupérer les largeurs des colonnes
         function getColumnWidths(table) {
             const columnWidths = [];
