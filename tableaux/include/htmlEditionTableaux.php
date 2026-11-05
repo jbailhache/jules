@@ -265,6 +265,7 @@ function htmlEditionTableaux($index, $htmlTable) {
         $output .= '>Aligner au centre</option>
 
     </select>
+    <br>
     <div style="table-container" id="table-container-' . $index . '"></div>
     <br>
     <input id="note" name="note" size="120" value="' . strip_tags(htmlToCustomTags($note)) . '" style="' . $styleNote . '">
