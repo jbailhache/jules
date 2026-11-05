@@ -77,7 +77,6 @@ function htmlEditionTableaux($index, $htmlTable) {
 
     $rows = $table->getElementsByTagName('tr');
     $data = [];
-    $mergeCells = [];
     $attributes = [];
     $occupied = []; // Tableau pour suivre les cellules occupées par rowspan/colspan
   
@@ -184,7 +183,6 @@ function htmlEditionTableaux($index, $htmlTable) {
 
     $json[$index] =  json_encode([
         'data' => $data, 
-        'mergeCells' => $mergeCells,
         'attributes' => $attributes,
         'colWidths' => $colWidths,
         // 'htmlTable' => $htmlTable,
